@@ -14,12 +14,24 @@ from socr.dataset.generator.character_generator import CharacterGenerator
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
 from socr.utils.trainer.trainer import Trainer
-from socr.utils.image import image_pillow_to_numpy, show_pytorch_image
+from socr.utils.image import show_pytorch_image
 
 
 class TextRecognizer:
+    """
+    This is the main class of the text recognizer
+    """
 
     def __init__(self, model_name="DilatationGruNetwork", optimizer_name="Adam", lr=0.001, name=None, is_cuda=True):
+        """
+        Creae a text recognizer with the given models name
+
+        :param model_name: The model name to use
+        :param optimizer_name: The optimizer name to use
+        :param lr: The learning rate
+        :param name: The name where to save the model
+        :param is_cuda: True to use cuda
+        """
         with open("resources/characters.txt", "r") as content_file:
             self.labels = content_file.read() + " "
 
@@ -40,6 +52,11 @@ class TextRecognizer:
         print("Test database length : " + str(self.test_database.__len__()))
 
     def train(self, overlr=None):
+        """
+        Train the network
+
+        :param overlr: Override the learning rate if specified
+        """
         if overlr is not None:
             self.set_lr(overlr)
 
@@ -50,13 +67,26 @@ class TextRecognizer:
         self.trainer.train(train_database, callback=lambda: self.trainer_callback())
 
     def trainer_callback(self):
+        """
+        Called during the training to test the network
+        :return: The average cer
+        """
         self.model.eval()
         return self.test(limit=32)
 
     def eval(self):
+        """
+        Evaluate the model
+        """
         self.model.eval()
 
-    def test(self, limit=32):
+    def test(self, limit=None):
+        """
+        Test the network
+
+        :param limit: Limit of images of the test
+        :return: The average cer
+        """
         loader = torch.utils.data.DataLoader(self.test_database, batch_size=1, shuffle=False, num_workers=4)
 
         test_len = len(self.test_database)
@@ -68,7 +98,6 @@ class TextRecognizer:
 
         sen_err = 0
         count = 0
-
 
         for i, data in enumerate(loader, 0):
             image, label = self.test_database.__getitem__(i)
@@ -107,6 +136,11 @@ class TextRecognizer:
         return wer
 
     def generateandexecute(self, onlyhand=False):
+        """
+        Generate some images and execute the network on these images
+
+        :param onlyhand: Use only handwritting if true
+        """
         while True:
             if not onlyhand:
                 image, label = self.test_database.__getitem__(randint(0, len(self.test_database) - 1))
@@ -119,14 +153,19 @@ class TextRecognizer:
             show_pytorch_image(image)
 
     def recognize(self, images):
+        """
+        Recognize the text on all the given images
+
+        :param images: The images
+        :return: The texts
+        """
 
         height = self.model.get_input_image_height()
         texts = []
 
         for image in images:
-            image_width, image_height = image.size
-            image = image.resize((image_width * height // image_height, height), Image.ANTIALIAS)
-            image = image_pillow_to_numpy(image)
+            image_channels, image_width, image_height = image.shape
+            image = np.resize(image, (image_channels, image_width * height // image_height, height))
 
             result = self.model(torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cuda())
             text = self.loss.ytrue_to_lines(result)
@@ -136,6 +175,12 @@ class TextRecognizer:
         return texts
 
     def recognize_files(self, files):
+        """
+        Recognize the text on all the given files
+
+        :param files: The file list
+        :return: THe texts
+        """
         self.eval()
         result = []
         for file in files:
@@ -144,38 +189,14 @@ class TextRecognizer:
         return result
 
     def set_lr(self, lr):
+        """
+        Override the learning rate
+
+        :param lr: The learning rate
+        """
         print("Overwriting the lr to " + str(lr))
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
-
-
-def test_line_generator():
-    with open("../resources/characters.txt", "r") as content_file:
-        labels = content_file.read() + " "
-
-    document_helper = DocumentGeneratorHelper()
-
-    all = LineGeneratedSet(document_helper, labels, None, 48)
-
-    # iam1 = IAMHandwritingLineDatabase(document_helper, "/space_sde/tbelos/dataset/iam-line/train", 64)
-    # iam2 = IAMOneLineHandwritingDatabase(document_helper, "/space_sde/tbelos/dataset/iam-one-line/train", 64)
-    # iam = MergedSet(iam1, iam2)
-
-    # all = IAMWashington(document_helper, "/space_sde/tbelos/dataset/iam-washington", 64)
-    # all = ICDARLineSet(document_helper, "/space_sde/tbelos/dataset/icdar/2017/Train-A", 64)
-
-    for i in range(0, 4):
-        image, line = all.__getitem__(randint(0, all.__len__() - 1))
-
-        print("LINE : " + str(line))
-        show_pytorch_image(image)
-
-
-def test_character_generator(labels=string.digits + string.ascii_letters + ".!?, "):
-    character_generator = CharacterGenerator(labels)
-    image, character = character_generator.generate()
-    image.show()
-    print(character)
 
 
 def main():
@@ -188,21 +209,10 @@ def main():
     parser.add_argument('--disablecuda', action='store_const', const=True, default=False)
     parser.add_argument('--generateandexecute', action='store_const', const=True, default=False)
     parser.add_argument('--onlyhand', action='store_const', const=True, default=False)
-    parser.add_argument('--testlinegenerator', action='store_const', const=True, default=False,
-                        help='Test the line generator')
-    parser.add_argument('--testchargenerator', action='store_const', const=True, default=False,
-                        help='Test the char generator')
     parser.add_argument('--test', action='store_const', const=True, default=False,
                         help='Test the char generator')
     args = parser.parse_args()
-
-    if args.testlinegenerator:
-        download_resources()
-        test_line_generator()
-    elif args.testchargenerator:
-        download_resources()
-        test_character_generator()
-    elif args.generateandexecute:
+    if args.generateandexecute:
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)
         line_ctc.eval()

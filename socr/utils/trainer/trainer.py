@@ -155,21 +155,21 @@ class Trainer:
             outputs = self.model(variable)
             loss_value = self.loss.forward(outputs, self.loss.process_labels(labels, is_cuda=is_cuda))
 
-            loss_value_cpu = loss_value.data.cpu().numpy()
-            if loss_value_cpu < 0:
-                sys.stdout.write("\nWarning : negative loss value, " + str(loss_value_cpu) + "\n")
-                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-                continue
-
-            if np.isnan(loss_value_cpu):
-                sys.stdout.write("\nWarning : nan loss value, " + str(loss_value_cpu) + "\n")
-                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-                continue
-
-            if np.isinf(loss_value_cpu):
-                sys.stdout.write("\nWarning : inf loss value, " + str(loss_value_cpu) + "\n")
-                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-                continue
+            # loss_value_cpu = loss_value.data.cpu().numpy()
+            # if loss_value_cpu < 0:
+            #     sys.stdout.write("\nWarning : negative loss value, " + str(loss_value_cpu) + "\n")
+            #     sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+            #     continue
+            #
+            # if np.isnan(loss_value_cpu):
+            #     sys.stdout.write("\nWarning : nan loss value, " + str(loss_value_cpu) + "\n")
+            #     sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+            #     continue
+            #
+            # if np.isinf(loss_value_cpu):
+            #     sys.stdout.write("\nWarning : inf loss value, " + str(loss_value_cpu) + "\n")
+            #     sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+            #     continue
 
             loss_value.backward()
 
@@ -186,22 +186,17 @@ class Trainer:
                 diff = end_time - self.start_time
                 self.start_time = end_time
                 self.elapsed = self.elapsed + diff.total_seconds()
-
-                if (i * batch_size) % 64 == 0:
-                    epoch_s = str(self.epoch)
-                    i_s = str(i * batch_size)
-                    elapsed_s = str(self.elapsed).replace(".", ",")
-                    loss_s = str(loss_value_np).replace(".", ",")
-                    ma_loss_s = str(self.moving_average).replace(".",",")
-                    lr_s = str(self.optimizer.state_dict()['param_groups'][0]['lr']).replace(".", ",")
-                    error_s = "" if self.error is None else str(self.error).replace(".", ",")
-
-                    csv_file.write(epoch_s + "\t" + i_s + "\t" + elapsed_s + "\t" + loss_s + "\t" + ma_loss_s + "\t" + lr_s + "\t" + error_s + "\n")
-
                 sys.stdout.write('[%d, %5d] lr: %.8f; loss: %.8f ; current_loss : %.8f; time : %.8f\r' % (self.epoch + 1, (i * batch_size) + 1, self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed))
 
         self.epoch = self.epoch + 1
         # self.adaptative_optimizer.step(self.moving_average.moving_average())
+
+        epoch_s = str(self.epoch)
+        elapsed_s = str(self.elapsed).replace(".", ",")
+        ma_loss_s = str(self.moving_average).replace(".", ",")
+        lr_s = str(self.optimizer.state_dict()['param_groups'][0]['lr']).replace(".", ",")
+        error_s = "" if self.error is None else str(self.error).replace(".", ",")
+        csv_file.write(epoch_s + "\t" + elapsed_s + "\t" + ma_loss_s + "\t" + lr_s + "\t" + error_s + "\n")
 
         self.autosave()
         sys.stdout.write("\n")

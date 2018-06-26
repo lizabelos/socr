@@ -9,4 +9,6 @@ if torch_version[0] == 0 and torch_version[1] < 4:
     print("Your torch version is incompatible with SOCR. Required is 0.4.0")
     exit(0)
 
+from .line_localizator import LineLocalizator
+from .text_recognizer import TextRecognizer
 from socr.recognizer import Recognizer
