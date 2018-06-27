@@ -7,9 +7,11 @@ from random import randint
 import torch
 from PIL import Image, ImageDraw
 
+from socr import print_normal
 from socr.dataset import parse_datasets_configuration_file, DocumentGeneratorHelper
 from socr.dataset.set.file_dataset import FileDataset
 from socr.models import get_model_by_name
+from socr.utils.logging.logger import print_warning
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer
 from socr.utils.image import show_numpy_image, image_pillow_to_numpy, image_numpy_to_pillow, mIoU
@@ -41,8 +43,8 @@ class LineLocalizator:
 
         # Parse and load all the test datasets specified into datasets.cfg
         self.database_helper = DocumentGeneratorHelper()
-        self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True, testing=True, args={"loss":self.loss})
-        print("Test database length : " + str(self.test_database.__len__()))
+        self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=False, testing=True, args={"loss":self.loss})
+        print_normal("Test database length : " + str(self.test_database.__len__()))
 
     def train(self, batch_size, overlr=None):
         """
@@ -55,7 +57,7 @@ class LineLocalizator:
             self.set_lr(overlr)
 
         train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True, testing=False, args={"loss": self.loss})
-        print("Training database length : " + str(train_database.__len__()))
+        print_normal("Train database length : " + str(train_database.__len__()))
         self.trainer.train(train_database, batch_size=batch_size)
 
     def set_lr(self, lr):
@@ -64,7 +66,7 @@ class LineLocalizator:
 
         :param lr: The new learning rate
         """
-        print("Overwriting the lr to " + str(lr))
+        print_normal("Overwriting the lr to " + str(lr))
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
 
@@ -92,7 +94,7 @@ class LineLocalizator:
             sys.stdout.write("Testing..." + str(i * 100 // test_len) + "%\r")
 
         error = error / test_len
-        sys.stdout.write("Testing...100%. Error : " + str(error) + "\n")
+        print_normal("Testing...100%. Error : " + str(error) + "\n")
         return error
 
     def test_generator(self):
@@ -121,9 +123,18 @@ class LineLocalizator:
         :param image_path: The path of the image
         """
         image = Image.open(image_path).convert('RGB')
+        width, height = image.size
+
+        if height > 512:
+            resized = image.resize((width * 512 // height, 512), Image.ANTIALIAS)
+        else:
+            resized = image
+
         image = torch.from_numpy(image_pillow_to_numpy(image))
-        result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))[0]
-        self.loss.show_ytrue(image.cpu().numpy(), result.cpu().detach().numpy())
+        resized = torch.from_numpy(image_pillow_to_numpy(resized))
+
+        result = self.model(torch.autograd.Variable(resized.unsqueeze(0).float().cuda()))[0]
+        self.loss.show_ytrue(resized.cpu().numpy(), result.cpu().detach().numpy())
         lines = self.loss.ytrue_to_lines(image.cpu().numpy(), result.cpu().detach().numpy())
         for line, pos in lines:
             show_numpy_image(line, invert_axes=True)
@@ -206,28 +217,24 @@ class LineLocalizator:
             resized, image, path = data
 
             percent = i * 100 // data_set.__len__()
-            print(str(percent) + "%... Processing " + path[0])
+            print_normal(str(percent) + "%... Processing " + path[0])
 
-            try:
-                lines, positions = self.extract(image, resized, with_images=False)
+            lines, positions = self.extract(image, resized, with_images=False)
 
-                self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
+            self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
 
-                xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
-                if os.path.exists(xml_path):
-                    shutil.copy2(xml_path, "results/" + str(count) + ".xml")
-                    with open("results/" + str(count) + ".txt", "w") as text_file:
-                        text_file.write(self.output_baseline(positions))
-                else:
-                    print("Can't find : '" + xml_path + "'")
-
-            except Exception as e:
-                print(e)
+            xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
+            if os.path.exists(xml_path):
+                shutil.copy2(xml_path, "results/" + str(count) + ".xml")
+                with open("results/" + str(count) + ".txt", "w") as text_file:
+                    text_file.write(self.output_baseline(positions))
+            else:
+                print_warning("Can't find : '" + xml_path + "'")
 
             count = count + 1
 
 
-def main():
+def main(sysarg):
     parser = argparse.ArgumentParser(description="socr")
     parser.add_argument('--bs', type=int, default=1)
     parser.add_argument('--model', type=str, default="XHeightResnetModel", help="Model name")
@@ -239,7 +246,7 @@ def main():
     parser.add_argument('--overlr', action='store_const', const=True, default=False)
     parser.add_argument('--lr', type=float, default=0.01, help="Learning rate")
     parser.add_argument('--name', type=str, default=None)
-    args = parser.parse_args()
+    args = parser.parse_args(sysarg)
 
     line_recognizer = LineLocalizator(args.model, args.lr, args.name, not args.disablecuda)
 
@@ -262,7 +269,3 @@ def main():
             line_recognizer.train(args.bs, args.lr)
         else:
             line_recognizer.train(args.bs)
-
-
-if __name__ == '__main__':
-    main()

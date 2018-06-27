@@ -1,6 +1,6 @@
 # This code comes from https://github.com/jpuigcerver/xer/blob/master/xer
 
-def levenshtein(u, v):
+cpdef levenshtein(u, v):
     prev = None
     curr = [0] + list(range(1, len(v) + 1))
     # Operations: (SUB, DEL, INS)

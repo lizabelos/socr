@@ -1,73 +1,76 @@
+#cython: wraparound=False
+#cython: boundscheck=False
+#cython: cdivision=True
+
 import math
 
 import numpy as np
+cimport numpy as np
 
 from socr.utils.image.connected_components import connected_components
 
 
-class BaselineDecoder():
+cdef class BaselineDecoder:
+
+    cdef float height_factor
 
     def __init__(self, height_factor):
         self.height_factor = height_factor
 
-    def decode(self, image, predicted, with_images=True):
-        components = connected_components(predicted[0])
-        num_components = np.max(components)
-        results = []
+    cpdef list decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True):
+        cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0])
+        cdef int num_components = np.max(components)
+        cdef list results = []
 
         for i in range(1, num_components + 1):
-            result = self.process_components(image, predicted, components, i, with_image=with_images)
+            result = self.process_components(image, predicted, components, i, with_image=with_images, degree=3, line_height=64, baseline_resolution=16)
             if result is not None:
                 results.append(result)
 
         return results
 
-    def process_components(self, image, prediction, components, index, degree=3, line_height=64,
-                           baseline_resolution=16, with_image=True):
-        x_train = []
-        y_data = []
+    cdef tuple process_components(self, double[:,:,:] image, float[:,:,:] prediction, int[:,:] components, int index, int degree=3, int line_height=64, int baseline_resolution=16, bint with_image=True):
+        cdef list x_train = []
+        cdef list y_data = []
 
-        max_height = 10
+        cdef int max_height = 10
 
         for y in range(0, components.shape[0]):
             for x in range(0, components.shape[1]):
                 if components[y][x] == index:
                     x_train.append(x)
                     y_data.append(y)
-                    max_height = max(max_height, prediction[1][y][x] / self.height_factor)
+                    max_height = int(max(max_height, prediction[1][y][x] / self.height_factor))
 
         if len(x_train) == 0:
             return None
 
-        min_x = min(x_train)
-        max_x = max(x_train)
-        line_components_width = max_x - min_x
-        line_components_height = int(max_height)
-        line_height = line_height
-        line_width = line_components_width * line_height // line_components_height
+        cdef float min_x = min(x_train)
+        cdef float max_x = max(x_train)
+        cdef float line_components_width = max_x - min_x
+        cdef int line_components_height = int(max_height)
+        cdef int line_width = int(line_components_width * line_height / line_components_height)
 
         if line_components_width < 10 and line_components_height < 10:
-            print("Warning : too small image width and height for index : " + str(index) + ". Skipping.")
+            # print("Warning : too small image width and height for index : " + str(index) + ". Skipping.")
             return None
 
         if line_components_width < 10:
-            print("Warning : too small image width for index : " + str(index) + ". Skipping.")
+            # print("Warning : too small image width for index : " + str(index) + ". Skipping.")
             return None
 
         if line_components_height < 10:
-            print("Warning : too small image height for index : " + str(index) + ". Skipping.")
+            # print("Warning : too small image height for index : " + str(index) + ". Skipping.")
             return None
 
-        x_train = np.array(x_train)
-        y_data = np.array(y_data)
 
-        coefs = np.polynomial.polynomial.polyfit(x_train, y_data, degree)
+        cdef double[:] coefs = np.polynomial.polynomial.polyfit(np.array(x_train), np.array(y_data), degree)
         ffit = np.polynomial.Polynomial(coefs)
         fderiv = np.polynomial.Polynomial(np.polynomial.polynomial.polyder(coefs))
 
-        fnorm = lambda x, a: -(a - x) / fderiv(x) + ffit(x)
+        # fnorm = lambda x, a: -(a - x) / fderiv(x) + ffit(x)
 
-        baseline_points = []
+        cdef list baseline_points = []
 
         for i in range(0, baseline_resolution + 1):
             x = min_x * (i / baseline_resolution) + max_x * ((baseline_resolution - i) / baseline_resolution)
@@ -90,9 +93,11 @@ class BaselineDecoder():
                     tany1 = ffit(x) - 1
                 else:
                     tanx0 = x + 1
-                    tany0 = fnorm(x, x + 1)
+                    tany0 = -((x + 1) - x) / fderiv(x) + ffit(x)
+                    # tany0 = fnorm(x, x + 1)
                     tanx1 = x - 1
-                    tany1 = fnorm(x, x - 1)
+                    tany1 = -((x - 1) - x) / fderiv(x) + ffit(x)
+                    # tany1 = fnorm(x, x - 1)
                     if tany0 < tany1:
                         tanx2, tany2 = tanx0, tany0
                         tanx0, tany0 = tanx1, tany1

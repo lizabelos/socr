@@ -28,15 +28,14 @@ class SequenceWise(torch.nn.Module):
 
 
 class RNNLayer(torch.nn.Module):
-    def __init__(self, input_size, hidden_size, rnn_type=torch.nn.GRU, bidirectional=True, biadd=True, batch_norm=True, input_view=False, output_view=False, dropout=0):
+    def __init__(self, input_size, hidden_size, num_layers=1, rnn_type=torch.nn.GRU, bidirectional=True, biadd=True, batch_norm=True, input_view=False, output_view=False, dropout=0):
         super(RNNLayer, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.bidirectional = bidirectional
         self.biadd = biadd
         self.batch_norm = SequenceWise(torch.nn.BatchNorm1d(input_size)) if batch_norm else None
-        self.rnn = rnn_type(input_size=input_size, hidden_size=hidden_size,
-                            bidirectional=bidirectional, bias=False, dropout=dropout)
+        self.rnn = rnn_type(input_size=input_size, hidden_size=hidden_size, bidirectional=bidirectional, num_layers=num_layers, dropout=dropout)
         self.num_directions = 2 if bidirectional else 1
         self.input_view = input_view
         self.output_view = output_view

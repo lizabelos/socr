@@ -6,14 +6,10 @@
 
 from __future__ import print_function
 
-import ctypes
-from numpy import *
-from scipy import *
-from scipy.misc import imsave
 from pylab import *
 from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage.morphology import distance_transform_edt, binary_erosion, binary_dilation
-from scipy.ndimage.interpolation import map_coordinates, zoom, rotate
 from scipy.stats.mstats import mquantiles
 
 

@@ -5,6 +5,7 @@ from datetime import datetime
 import numpy as np
 import torch
 
+from socr.utils.logging.logger import print_normal, print_warning, print_error
 from socr.utils.maths.moving_average import MovingAverage
 
 
@@ -46,7 +47,7 @@ class Trainer:
         if os.path.exists(self.checkpoint_name):
             self.restore()
         else:
-            print("Can't find '" + self.checkpoint_name + "'")
+            print_warning("Can't find '" + self.checkpoint_name + "'")
 
     def restore(self):
         """
@@ -55,7 +56,7 @@ class Trainer:
         :return: The complement data saved with the checkpoint (given in the constructor parameters).
         """
 
-        print("Restoring the weights...")
+        print_normal("Restoring the weights...")
         checkpoint = torch.load(self.checkpoint_name)
         self.epoch = checkpoint['epoch']
         self.checkpoint_userdata = checkpoint['userdata']
@@ -114,9 +115,9 @@ class Trainer:
                         try:
                             self.error = callback()
                         except Exception as e:
-                            print("Callback error : " + str(e))
+                            print_error("Callback error : " + str(e))
 
-            print("Done training ! Saving...")
+            print_normal("Done training ! Saving...")
             self.save()
 
         except KeyboardInterrupt:

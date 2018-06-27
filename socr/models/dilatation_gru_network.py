@@ -33,20 +33,21 @@ class DilatationGruNetwork(ConvolutionalModel):
             ('conv3-1', torch.nn.Conv2d(128, 256, kernel_size=3)),
             ('activation3-1', self.activation),
             ('conv3-2', torch.nn.Conv2d(256, 256, kernel_size=3)),
-            ('activation3-2', self.activation)
+            ('activation3-2', self.activation),
+            ('conv3-3', torch.nn.Conv2d(256, 256, kernel_size=3)),
+            ('activation3-3', self.activation),
+            ('maxpool3', torch.nn.MaxPool2d(kernel_size=(3, 1), stride=(3, 1)))
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.lstm1 = RNNLayer(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, rnn_type=torch.nn.GRU, bidirectional=True, batch_norm=False, biadd=True, dropout=0.5)
-        self.lstm2 = RNNLayer(256, 256, rnn_type=torch.nn.GRU, bidirectional=True, batch_norm=False, biadd=True, dropout=0.5)
+        self.rnn = RNNLayer(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=4, rnn_type=torch.nn.GRU, bidirectional=True, batch_norm=False, biadd=True, dropout=0.5)
 
         self.fc = torch.nn.Linear(256, self.output_numbers)
 
         print(self.convolutions_output_size)
         print(self.convolutions)
-        print(self.lstm1)
-        print(self.lstm2)
-        # print(self.fc)
+        print(self.rnn)
+        print(self.fc)
 
     def forward_cnn(self, x):
         return self.convolutions(x)
@@ -63,12 +64,11 @@ class DilatationGruNetwork(ConvolutionalModel):
         # x is (batch_size x width x hidden_size)
         x = torch.transpose(x, 0, 1).contiguous()
 
-        x = self.lstm1(x)
-        x = self.activation(x)
-        x = self.lstm2(x)
+        x = self.rnn(x)
         x = self.activation(x)
 
         x = self.fc(x)
+        x = self.activation(x)
 
         x = x.transpose(0, 1)
 

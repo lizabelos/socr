@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 
+from socr.utils.logging.logger import print_normal
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.dataset.generator.line_generator import LineGenerator
 from socr.dataset.set.line_generated_set import LineGeneratedSet
@@ -34,13 +35,13 @@ def parse_datasets_configuration_file(helper, path="datasets.cfg", with_document
             continue
 
         if training and "train" in dict:
-            print("Loading " + str(dict) + "...")
+            print_normal("Loading train database " + str(dict["type"]) + "...")
             dataset = parse_dataset(helper, dict["type"], dict["train"], args)
             if dataset is not None:
                 datasets.append(dataset)
 
         if testing and "test" in dict:
-            print("Loading " + str(dict) + "...")
+            print_normal("Loading test database " + str(dict["type"]) + "...")
             dataset = parse_dataset(helper, dict["type"], dict["test"], args)
             if dataset is not None:
                 datasets.append(dataset)

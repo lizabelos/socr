@@ -15,8 +15,7 @@ __SOCR is incompatible with Python 2 and Windows__.
 
 ## Compilation
 
-The compilation is not needed to use SOCR. But it will be more slower without.
-To compile it, run : 
+To compile, run : 
 
 ```python3 setup.py build_ext --inplace```
 
@@ -26,7 +25,7 @@ To compile it, run :
 
 Please make sure that ```checkpoint_line.pth.tar``` and ```checkpoint_ocr.pth.tar``` is present under the ```checkpoints``` filder.
 Then run 
-```python -m socr.recognizer [your files] [your folders]  ...```
+```./launch recognizer [your files] [your folders]  ...```
 
 ### API
 
@@ -94,16 +93,12 @@ train = /dataset/iam-washington/
 
 ### How to train/test the line recognizer ?
 
-Execute ```python -m socr.line_localizator``` to train the line recognizer.
-Execute ```python -m socr.line_localizator --generateandexecute``` to test the line recognizer.
+Execute ```./launch line``` to train the line recognizer.
+Execute ```./launch line --generateandexecute``` to test the line recognizer.
 
 ### How to train/test the ocr network ?
 
-Execute ```python -m socr.text_recognizer``` to train the ocr network.
-Execute ```python -m socr.text_recognizer --generateandexecute``` to test the ocr network.
+Execute ```./launch text``` to train the ocr network.
+Execute ```./launch text --generateandexecute``` to test the ocr network.
 
 You can use the three ```--model```, ```--optimizer```, ```--lr``` to specify the model and the opitmizer to use.
-
-### Compare the SOCR Ocr networks with Ocropy models
-
-The script ```compare_text_recognizer``` has been made to compare SOCR networks with Ocropy.

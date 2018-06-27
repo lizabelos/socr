@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 
 import torch
 from PIL import Image, ImageDraw, ImageFont
@@ -46,14 +45,14 @@ class Recognizer:
         return image
 
 
-def main():
+def main(sysarg):
     if not os.path.exists("results"):
         os.makedirs("results")
 
     recognizer = Recognizer()
 
     data_set = FileDataset()
-    for path in sys.argv[1:]:
+    for path in sysarg[1:]:
         data_set.recursive_list(path)
     data_set.sort()
 
@@ -92,7 +91,3 @@ def main():
             print(e)
 
         count = count + 1
-
-
-if __name__ == '__main__':
-    main()

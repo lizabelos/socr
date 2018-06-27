@@ -2,6 +2,7 @@ import os
 from random import randint, random
 
 import torch
+import numpy as np
 from os.path import isfile, join
 
 from PIL import Image
@@ -129,19 +130,8 @@ class ICDARDocumentSet(Dataset):
 
         return points
 
-    def randomCrop(self, img, mask, width, height):
-        assert img.shape[0] >= height
-        assert img.shape[1] >= width
-        assert img.shape[0] == mask.shape[0]
-        assert img.shape[1] == mask.shape[1]
-        x = random.randint(0, img.shape[1] - width)
-        y = random.randint(0, img.shape[0] - height)
-        img = img[y:y + height, x:x + width]
-        mask = mask[y:y + height, x:x + width]
-        return img, mask
-
     def __getitem__(self, index):
-        image_path, regions = self.labels[index]
+        image_path, regions = self.labels[index % len(self.labels)]
         try:
             image = Image.open(image_path).convert('RGB')
         except:
@@ -149,8 +139,8 @@ class ICDARDocumentSet(Dataset):
             return self.__getitem__(randint(0, self.__len__() - 1))
 
         width, height = image.size
-
-        new_height = randint(300, 400)
+        # new_height = randint(height // 8, height // 2)
+        new_height = randint(600, 800)
         image = image.resize((width * new_height // height, new_height), Image.ANTIALIAS)
 
         new_regions = []
@@ -167,7 +157,19 @@ class ICDARDocumentSet(Dataset):
 
         image = image_pillow_to_numpy(image)
 
+
+        # Make the crop
+        crop_width = 128
+        crop_height = 128
+        crop_x = randint(0, image.shape[2] - crop_width)
+        crop_y = randint(0, image.shape[1] - crop_height)
+
+        label = label[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
+        image = np.stack([image[i][crop_y:crop_y + crop_height, crop_x:crop_x + crop_width] for i in range(0, 3)], axis=0)
+
+
+
         return torch.from_numpy(image), torch.from_numpy(label)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.labels) * 1024

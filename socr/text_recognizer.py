@@ -1,20 +1,19 @@
 import argparse
-import string
 import sys
 from random import randint
 
 import numpy as np
 import torch
 from PIL import Image
-
-from socr.utils.setup.download import download_resources
 from socr.utils.rating.word_error_rate import levenshtein
-from socr.dataset import parse_datasets_configuration_file, LineGeneratedSet
-from socr.dataset.generator.character_generator import CharacterGenerator
+
+from socr import print_normal
+from socr.dataset import parse_datasets_configuration_file
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
-from socr.utils.trainer.trainer import Trainer
 from socr.utils.image import show_pytorch_image
+from socr.utils.setup.download import download_resources
+from socr.utils.trainer.trainer import Trainer
 
 
 class TextRecognizer:
@@ -49,7 +48,7 @@ class TextRecognizer:
         self.database_helper = DocumentGeneratorHelper()
         self.test_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=False, testing=True, args={"height": self.model.get_input_image_height(), "labels": self.labels, "transform":True})
 
-        print("Test database length : " + str(self.test_database.__len__()))
+        print_normal("Test database length : " + str(self.test_database.__len__()))
 
     def train(self, overlr=None):
         """
@@ -132,7 +131,7 @@ class TextRecognizer:
         wer = (100.0 * (wer_s + wer_i + wer_d)) / wer_n
         ser = (100.0 * sen_err) / count
 
-        sys.stdout.write("Testing...100%. WER : " + str(wer) + "; CER : " + str(cer) + "; SER : " + str(ser) + "\n")
+        print_normal("Testing...100%. WER : " + str(wer) + "; CER : " + str(cer) + "; SER : " + str(ser) + "\n")
         return wer
 
     def generateandexecute(self, onlyhand=False):
@@ -194,12 +193,12 @@ class TextRecognizer:
 
         :param lr: The learning rate
         """
-        print("Overwriting the lr to " + str(lr))
+        print_normal("Overwriting the lr to " + str(lr))
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
 
 
-def main():
+def main(sysarg):
     parser = argparse.ArgumentParser(description="SOCR Text Recognizer")
     parser.add_argument('--model', type=str, default="DilatationGruNetwork", help="Model name")
     parser.add_argument('--optimizer', type=str, default="Adam", help="SGD, RMSProp, Adam")
@@ -211,7 +210,7 @@ def main():
     parser.add_argument('--onlyhand', action='store_const', const=True, default=False)
     parser.add_argument('--test', action='store_const', const=True, default=False,
                         help='Test the char generator')
-    args = parser.parse_args()
+    args = parser.parse_args(sysarg)
     if args.generateandexecute:
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)
@@ -229,7 +228,3 @@ def main():
             line_ctc.train(args.lr)
         else:
             line_ctc.train()
-
-
-if __name__ == '__main__':
-    main()

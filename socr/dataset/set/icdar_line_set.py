@@ -10,6 +10,7 @@ from torch.utils.data.dataset import Dataset
 
 from socr.dataset.generator.document_generator import DocumentGenerator
 from socr.utils.image import image_pillow_to_numpy
+from socr.utils.logging.logger import print_warning
 
 
 class ICDARLineSet(Dataset):
@@ -35,7 +36,7 @@ class ICDARLineSet(Dataset):
             tree = etree.parse(join(path, file_name))
             root = tree.getroot()
         except:
-            print("Warning : invalid xml file '" + file_name + "'")
+            print_warning("Invalid xml file '" + file_name + "'")
             return
 
         for children in root.getchildren():

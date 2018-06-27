@@ -5,18 +5,11 @@ import cv2
 def connected_components(image):
     image = (np.clip(image, 0, 1) * 255).astype(np.uint8)
     ret, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_OTSU)
-    dist_transform = thresh
-
-    # ret, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
-    # sure_fg = np.uint8(sure_fg)
-
-    # unknown = cv2.subtract(sure_bg, sure_fg)
 
     # Marker labelling
     ret, markers = cv2.connectedComponents(thresh)
     markers = markers + 1
     markers[thresh == 0] = 0
-
     return markers
 
 

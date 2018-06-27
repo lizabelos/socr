@@ -33,7 +33,7 @@ class LineGenerator(Generator):
                     font_width, font_height = font.getsize(text[i])
                     break
                 except OSError:
-                    print("Warning : execution context too long ! Continuing...")
+                    # print("Warning : execution context too long ! Continuing...")
                     font = self.helper.get_font(0, font_height)
 
             lefts.append(text_start + total_width)
