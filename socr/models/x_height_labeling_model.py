@@ -37,10 +37,10 @@ class XHeightLabelingModel(ConvolutionalModel):
             ('conv6', torch.nn.Conv2d(256, 256, kernel_size=(3, 3), dilation=(4, 4), padding=4)),
             ('activation6', self.activation),
 
-            ('lstm', Lstm2D(256, 2, 256, 256, ksize=1)),
-            ('activation7', self.activation),
+            # ('lstm', Lstm2D(256, 2, 256, 256, ksize=1)),
+            # ('activation7', self.activation),
 
-            ('conv7', torch.nn.Conv2d(4, 2, kernel_size=(1, 1), dilation=(1, 1), padding=0)),
+            ('conv7', torch.nn.Conv2d(256, 2, kernel_size=(1, 1), dilation=(1, 1), padding=0)),
             # ('activation8', torch.nn.Sigmoid())
         ]))
 

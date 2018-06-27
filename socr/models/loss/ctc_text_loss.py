@@ -27,7 +27,7 @@ class CTCTextLoss(Loss):
 
         self.labels = labels
         self.labels_len = len(self.labels) + 1
-        self.loss = CTCLoss(size_average=True, length_average=True)
+        self.loss = CTCLoss(size_average=True, length_average=True).cuda()
 
         self.decoder = ctcdecode.CTCBeamDecoder("_" + labels)
 
@@ -36,7 +36,7 @@ class CTCTextLoss(Loss):
         labels = torch.autograd.Variable(torch.IntTensor(labels), requires_grad=False)
         labels_length = torch.autograd.Variable(torch.IntTensor([labels_length]), requires_grad=False)
 
-        inputs = inputs.transpose(0, 1)
+        # inputs = inputs.transpose(0, 1)
         inputs_width = inputs.size(0)
         batch_size = inputs.size(1)
         inputs_width = torch.autograd.Variable(torch.IntTensor([inputs_width] * batch_size), requires_grad=False)

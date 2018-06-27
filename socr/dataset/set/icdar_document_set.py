@@ -151,16 +151,16 @@ class ICDARDocumentSet(Dataset):
             x1 = x1 * new_height // height
             y1 = y1 * new_height // height
             h = h * new_height // height
-            new_regions.append((x0, y0, x1, y1, h))
+            new_regions.append([x0, y0, x1, y1, h])
 
-        label = self.loss.document_to_ytrue((width * new_height // height, new_height), new_regions)
+        label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
 
         image = image_pillow_to_numpy(image)
 
 
         # Make the crop
-        crop_width = 128
-        crop_height = 128
+        crop_width = 256
+        crop_height = 256
         crop_x = randint(0, image.shape[2] - crop_width)
         crop_y = randint(0, image.shape[1] - crop_height)
 

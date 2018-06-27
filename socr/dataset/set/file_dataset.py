@@ -31,7 +31,7 @@ class FileDataset(Dataset):
         width, height = image.size
 
         if height > 512:
-            resized = image.resize((width * 512 // height, 512), Image.ANTIALIAS)
+            resized = image.resize((width * 800 // height, 800), Image.ANTIALIAS)
         else:
             resized = image
 

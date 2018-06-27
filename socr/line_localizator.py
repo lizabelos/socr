@@ -125,8 +125,8 @@ class LineLocalizator:
         image = Image.open(image_path).convert('RGB')
         width, height = image.size
 
-        if height > 512:
-            resized = image.resize((width * 512 // height, 512), Image.ANTIALIAS)
+        if height > 800:
+            resized = image.resize((width * 800 // height, 800), Image.ANTIALIAS)
         else:
             resized = image
 

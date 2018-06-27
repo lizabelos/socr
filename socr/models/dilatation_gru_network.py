@@ -2,6 +2,14 @@ from collections import OrderedDict
 
 import torch
 
+from socr.utils.setup.build import build_sru
+
+try:
+    from sru import SRU
+except Exception:
+    build_sru()
+    from sru import SRU
+
 from socr.models.convolutional_model import ConvolutionalModel
 from socr.nn import RNNLayer
 from socr.models.loss import CTCTextLoss
@@ -40,9 +48,9 @@ class DilatationGruNetwork(ConvolutionalModel):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = RNNLayer(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=4, rnn_type=torch.nn.GRU, bidirectional=True, batch_norm=False, biadd=True, dropout=0.5)
+        self.rnn = SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=2, bidirectional=True, rnn_dropout=0.5)
 
-        self.fc = torch.nn.Linear(256, self.output_numbers)
+        self.fc = torch.nn.Linear(256 * 2, self.output_numbers)
 
         print(self.convolutions_output_size)
         print(self.convolutions)
@@ -64,15 +72,11 @@ class DilatationGruNetwork(ConvolutionalModel):
         # x is (batch_size x width x hidden_size)
         x = torch.transpose(x, 0, 1).contiguous()
 
-        x = self.rnn(x)
-        x = self.activation(x)
-
+        x, _ = self.rnn(x)
         x = self.fc(x)
-        x = self.activation(x)
-
-        x = x.transpose(0, 1)
 
         if not self.training:
+            x = x.transpose(0, 1)
             x = torch.nn.functional.softmax(x, dim=2)
 
         return x
