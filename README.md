@@ -17,7 +17,13 @@ __SOCR is incompatible with Python 2 and Windows__.
 
 To compile, run : 
 
-```python3 setup.py build_ext --inplace```
+```
+conda install --yes --file requirements.txt
+conda install --channel https://conda.anaconda.org/menpo opencv3
+python3 setup.py build_ext --inplace
+```
+
+The first run of the program will download resources, and install ctc wrapper and sru.
 
 ## How to recognize a page of text ?
 

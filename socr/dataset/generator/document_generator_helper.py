@@ -94,9 +94,10 @@ class DocumentGeneratorHelper(Generator):
                         self.preloaded_phantoms_l[phantom_id])
         return image
 
-    def augment(self, image):
-        c = gauss_distort([image[0], image[1], image[2]])
-        image = np.stack(c, axis=0)
+    def augment(self, image, distort=True):
+        if distort:
+            c = gauss_distort([image[0], image[1], image[2]])
+            image = np.stack(c, axis=0)
         image = skimage.util.random_noise(image)
         return image
 

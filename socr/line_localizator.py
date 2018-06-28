@@ -41,6 +41,8 @@ class LineLocalizator:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
+        self.maximum_height = 1024
+
         # Parse and load all the test datasets specified into datasets.cfg
         self.database_helper = DocumentGeneratorHelper()
         self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=False, testing=True, args={"loss":self.loss})
@@ -125,8 +127,8 @@ class LineLocalizator:
         image = Image.open(image_path).convert('RGB')
         width, height = image.size
 
-        if height > 800:
-            resized = image.resize((width * 800 // height, 800), Image.ANTIALIAS)
+        if height > self.maximum_height:
+            resized = image.resize((width * self.maximum_height // height, self.maximum_height), Image.ANTIALIAS)
         else:
             resized = image
 
@@ -205,7 +207,7 @@ class LineLocalizator:
         if not os.path.exists("results"):
             os.makedirs("results")
 
-        data_set = FileDataset()
+        data_set = FileDataset(self.maximum_height)
         data_set.recursive_list(path)
         data_set.sort()
 

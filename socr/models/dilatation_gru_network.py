@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 import torch
 
+from socr.nn.modules.resnet import ResNet, BasicBlock
 from socr.utils.setup.build import build_sru
 
 try:
@@ -26,34 +27,38 @@ class DilatationGruNetwork(ConvolutionalModel):
         self.activation = torch.nn.ReLU()
 
         self.convolutions = torch.nn.Sequential(OrderedDict([
-            ('conv1-1', torch.nn.Conv2d(3, 64, kernel_size=3)),
-            ('activation1-1', self.activation),
-            ('conv1-2', torch.nn.Conv2d(64, 64, kernel_size=3)),
-            ('activation1-2', self.activation),
-            ('maxpool1', torch.nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))),
+            ('first', torch.nn.Conv2d(3, 64, kernel_size=7, padding=3, stride=(2, 1), bias=False)),
+            ('activation', torch.nn.ReLU()),
+            ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], strides=[1, (2, 1), (2, 1), (2, 1)], bn=False)),
 
-            ('conv2-1', torch.nn.Conv2d(64, 128, kernel_size=3)),
-            ('activation2-1', self.activation),
-            ('conv2-2', torch.nn.Conv2d(128, 128, kernel_size=3)),
-            ('activation2-2', self.activation),
-            ('maxpool2', torch.nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))),
-
-            ('conv3-1', torch.nn.Conv2d(128, 256, kernel_size=3)),
-            ('activation3-1', self.activation),
-            ('conv3-2', torch.nn.Conv2d(256, 256, kernel_size=3)),
-            ('activation3-2', self.activation),
-            ('conv3-3', torch.nn.Conv2d(256, 256, kernel_size=3)),
-            ('activation3-3', self.activation),
-            ('maxpool3', torch.nn.MaxPool2d(kernel_size=(3, 1), stride=(3, 1)))
+            # ('conv1-1', torch.nn.Conv2d(3, 64, kernel_size=3)),
+            # ('activation1-1', self.activation),
+            # ('conv1-2', torch.nn.Conv2d(64, 64, kernel_size=3)),
+            # ('activation1-2', self.activation),
+            # ('maxpool1', torch.nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))),
+            #
+            # ('conv2-1', torch.nn.Conv2d(64, 128, kernel_size=3)),
+            # ('activation2-1', self.activation),
+            # ('conv2-2', torch.nn.Conv2d(128, 128, kernel_size=3)),
+            # ('activation2-2', self.activation),
+            # ('maxpool2', torch.nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))),
+            #
+            # ('conv3-1', torch.nn.Conv2d(128, 256, kernel_size=3)),
+            # ('activation3-1', self.activation),
+            # ('conv3-2', torch.nn.Conv2d(256, 256, kernel_size=3)),
+            # ('activation3-2', self.activation),
+            # ('conv3-3', torch.nn.Conv2d(256, 256, kernel_size=3)),
+            # ('activation3-3', self.activation),
+            # ('maxpool3', torch.nn.MaxPool2d(kernel_size=(3, 1), stride=(3, 1)))
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=2, bidirectional=True, rnn_dropout=0.5)
+        self.rnn = SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=8, bidirectional=True, rnn_dropout=0.1, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
         self.fc = torch.nn.Linear(256 * 2, self.output_numbers)
 
-        print(self.convolutions_output_size)
         print(self.convolutions)
+        print(self.convolutions_output_size)
         print(self.rnn)
         print(self.fc)
 
@@ -85,7 +90,7 @@ class DilatationGruNetwork(ConvolutionalModel):
         return None
 
     def get_input_image_height(self):
-        return 48
+        return 64
 
     def create_loss(self):
         return CTCTextLoss(self.labels)

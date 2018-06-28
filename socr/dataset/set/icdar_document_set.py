@@ -17,6 +17,7 @@ class ICDARDocumentSet(Dataset):
 
     def __init__(self, helper, path, loss=None):
         self.loss = loss
+        self.helper = helper
         self.labels = []
         self.document_generator = DocumentGenerator(helper)
         self.recursive_list(path)
@@ -140,7 +141,7 @@ class ICDARDocumentSet(Dataset):
 
         width, height = image.size
         # new_height = randint(height // 8, height // 2)
-        new_height = randint(600, 800)
+        new_height = randint(1000, 1200)
         image = image.resize((width * new_height // height, new_height), Image.ANTIALIAS)
 
         new_regions = []
@@ -167,9 +168,9 @@ class ICDARDocumentSet(Dataset):
         label = label[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
         image = np.stack([image[i][crop_y:crop_y + crop_height, crop_x:crop_x + crop_width] for i in range(0, 3)], axis=0)
 
-
+        image = self.helper.augment(image, distort=False)
 
         return torch.from_numpy(image), torch.from_numpy(label)
 
     def __len__(self):
-        return len(self.labels) * 1024
+        return len(self.labels) * 32

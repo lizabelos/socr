@@ -9,8 +9,9 @@ from socr.utils.image import image_pillow_to_numpy
 
 class FileDataset(Dataset):
 
-    def __init__(self):
+    def __init__(self, maximum_height):
         self.list = []
+        self.maximum_height = maximum_height
 
     def recursive_list(self, path):
         if isfile(path):
@@ -30,8 +31,8 @@ class FileDataset(Dataset):
         image = Image.open(self.list[index]).convert("RGB")
         width, height = image.size
 
-        if height > 512:
-            resized = image.resize((width * 800 // height, 800), Image.ANTIALIAS)
+        if height > self.maximum_height:
+            resized = image.resize((width * self.maximum_height // height, self.maximum_height), Image.ANTIALIAS)
         else:
             resized = image
 

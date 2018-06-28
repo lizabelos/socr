@@ -21,11 +21,11 @@ class XHeightResnetModel(ConvolutionalModel):
             ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], bn=False)),
             ('pspmodule', PSPModule(512, 512)),
             ('up1', PSPUpsample(512, 256, bn=False)),
-            ('drop1', torch.nn.Dropout2d(p=0.15)),
+            ('drop1', torch.nn.Dropout2d(p=0.1)),
             ('up2', PSPUpsample(256, 64, bn=False)),
-            ('drop2', torch.nn.Dropout2d(p=0.30)),
+            ('drop2', torch.nn.Dropout2d(p=0.1)),
             ('up3', PSPUpsample(64, 64, bn=False)),
-            ('drop3', torch.nn.Dropout2d(p=0.30)),
+            ('drop3', torch.nn.Dropout2d(p=0.1)),
             ('final', torch.nn.Conv2d(64, 2, kernel_size=1)),
         ]))
 
