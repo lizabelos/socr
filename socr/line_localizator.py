@@ -12,6 +12,7 @@ from socr.dataset import parse_datasets_configuration_file, DocumentGeneratorHel
 from socr.dataset.set.file_dataset import FileDataset
 from socr.models import get_model_by_name
 from socr.utils.logging.logger import print_warning
+from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer
 from socr.utils.image import show_numpy_image, image_pillow_to_numpy, image_numpy_to_pillow, mIoU
@@ -44,8 +45,9 @@ class LineLocalizator:
         self.maximum_height = 1024
 
         # Parse and load all the test datasets specified into datasets.cfg
+        load_default_datasets_cfg_if_not_exist()
         self.database_helper = DocumentGeneratorHelper()
-        self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=False, testing=True, args={"loss":self.loss})
+        self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=False, testing=True, args={"loss":self.loss, "transform":False})
         print_normal("Test database length : " + str(self.test_database.__len__()))
 
     def train(self, batch_size, overlr=None):
@@ -58,7 +60,7 @@ class LineLocalizator:
         if overlr is not None:
             self.set_lr(overlr)
 
-        train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True, testing=False, args={"loss": self.loss})
+        train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True, testing=False, args={"loss": self.loss, "transform":True})
         print_normal("Train database length : " + str(train_database.__len__()))
         self.trainer.train(train_database, batch_size=batch_size)
 
@@ -226,6 +228,9 @@ class LineLocalizator:
             self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
 
             xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
+            if not os.path.exists(xml_path):
+                xml_path = os.path.join(os.path.dirname(path[0]), "page/" + os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
+
             if os.path.exists(xml_path):
                 shutil.copy2(xml_path, "results/" + str(count) + ".xml")
                 with open("results/" + str(count) + ".txt", "w") as text_file:

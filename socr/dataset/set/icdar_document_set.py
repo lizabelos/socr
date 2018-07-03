@@ -15,12 +15,13 @@ from socr.utils.image import image_pillow_to_numpy
 
 class ICDARDocumentSet(Dataset):
 
-    def __init__(self, helper, path, loss=None):
+    def __init__(self, helper, path, loss=None, transform=True):
         self.loss = loss
         self.helper = helper
         self.labels = []
         self.document_generator = DocumentGenerator(helper)
         self.recursive_list(path)
+        self.transform = transform
 
     def recursive_list(self, path):
         for file_name in os.listdir(path):
@@ -46,6 +47,11 @@ class ICDARDocumentSet(Dataset):
         image_filename = root_dict["imageFilename"]
         # image_fullpath = join(path, "../" + image_filename)
         image_fullpath = join(path, image_filename)
+        if not os.path.isfile(image_fullpath):
+            image_fullpath = join(path, "../" + image_filename)
+
+        if not os.path.isfile(image_fullpath):
+            return
 
         regions = []
         for children in root.getchildren():
@@ -97,7 +103,8 @@ class ICDARDocumentSet(Dataset):
             h1 = abs(region[2 * i + 1] - region[len(region) - (2 * i + 1)])
             h2 = abs(region[2 * j + 1] - region[len(region) - (2 * j + 1)])
 
-            results.append((int((x0 + x1) / 2), int((y0 + y1) / 2), int((x2 + x3) / 2), int((y2 + y3) / 2), (h1 + h2) / 2))
+            results.append(
+                (int((x0 + x1) / 2), int((y0 + y1) / 2), int((x2 + x3) / 2), int((y2 + y3) / 2), (h1 + h2) / 2))
 
         return results
 
@@ -158,19 +165,20 @@ class ICDARDocumentSet(Dataset):
 
         image = image_pillow_to_numpy(image)
 
+        if self.transform:
+            # Make the crop
+            crop_width = 256
+            crop_height = 256
+            crop_x = randint(0, image.shape[2] - crop_width)
+            crop_y = randint(0, image.shape[1] - crop_height)
 
-        # Make the crop
-        crop_width = 256
-        crop_height = 256
-        crop_x = randint(0, image.shape[2] - crop_width)
-        crop_y = randint(0, image.shape[1] - crop_height)
+            label = label[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
+            image = np.stack([image[i][crop_y:crop_y + crop_height, crop_x:crop_x + crop_width] for i in range(0, 3)],
+                             axis=0)
 
-        label = label[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
-        image = np.stack([image[i][crop_y:crop_y + crop_height, crop_x:crop_x + crop_width] for i in range(0, 3)], axis=0)
-
-        image = self.helper.augment(image, distort=False)
+            image = self.helper.augment(image, distort=False)
 
         return torch.from_numpy(image), torch.from_numpy(label)
 
     def __len__(self):
-        return len(self.labels) * 32
+        return len(self.labels)

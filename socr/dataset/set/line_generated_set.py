@@ -20,11 +20,8 @@ class LineGeneratedSet(Dataset):
         image_pillow, label = self.generate_image_with_label(index)
         image = image_pillow_to_numpy(image_pillow)
 
-        c = [None, None, None]
-        for i in range(0, 3):
-            c[i] = gauss_distort([gauss_degrade(image[i])])[0]
-
-        image = np.stack(image, axis=0)
+        if self.transform:
+            image = self.document_generator.helper.augment(image)
 
         return torch.from_numpy(image), label
 
@@ -40,9 +37,6 @@ class LineGeneratedSet(Dataset):
             image = image.resize((self.width, self.height), Image.ANTIALIAS)
         else:
             image = image.resize((width * self.height // height, self.height), Image.ANTIALIAS)
-
-        if self.transform:
-            image = self.document_generator.helper.augment(image)
 
         return image, document
 

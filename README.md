@@ -7,19 +7,18 @@ Structured OCR is a line localization and text extraction tools using Deep Learn
 ## Requirements
 
  - A Linux or a Mac computer with CUDA 8 minimum
- - PyTorch
+ - Python 3
+ - PyTorch 0.4
+ - GCC/G++ version 5 (even if it's not your default compiler)
  - All the package specified in the ```requirements.txt``` file. You can install all the package by using : ```conda install --file requirements.txt```
  - OpenCV 3 for Python. You can install it using ```conda install --channel https://conda.anaconda.org/menpo opencv3```
 
-__SOCR is incompatible with Python 2 and Windows__.
 
 ## Compilation
 
 To compile, run : 
 
 ```
-conda install --yes --file requirements.txt
-conda install --channel https://conda.anaconda.org/menpo opencv3
 python3 setup.py build_ext --inplace
 ```
 

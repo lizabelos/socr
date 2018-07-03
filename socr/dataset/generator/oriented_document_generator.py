@@ -54,7 +54,7 @@ class OrientedDocumentGenerator(Generator):
         y0 = y0 + (new_height - height) / 2
         y1 = y1 + (new_height - height) / 2
 
-        return image, (x0, y0, x1, y1, height)
+        return image, [x0, y0, x1, y1, height]
 
     def generate(self, index):
         width = randint(200, 400)
@@ -90,7 +90,7 @@ class OrientedDocumentGenerator(Generator):
             x1 = int(x1 + text_start)
             y0 = int(y0 + y)
             y1 = int(y1 + y)
-            base_lines.append((x0, y0, x1, y1, line_height))
+            base_lines.append([x0, y0, x1, y1, line_height])
 
             y = y + line_height
 

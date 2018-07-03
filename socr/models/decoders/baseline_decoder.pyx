@@ -17,13 +17,13 @@ cdef class BaselineDecoder:
     def __init__(self, height_factor):
         self.height_factor = height_factor
 
-    cpdef list decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True):
+    cpdef list decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3):
         cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0])
         cdef int num_components = np.max(components)
         cdef list results = []
 
         for i in range(1, num_components + 1):
-            result = self.process_components(image, predicted, components, i, with_image=with_images, degree=3, line_height=64, baseline_resolution=16)
+            result = self.process_components(image, predicted, components, i, with_image=with_images, degree=degree, line_height=64, baseline_resolution=16)
             if result is not None:
                 results.append(result)
 
@@ -62,7 +62,6 @@ cdef class BaselineDecoder:
         if line_components_height < 10:
             # print("Warning : too small image height for index : " + str(index) + ". Skipping.")
             return None
-
 
         cdef double[:] coefs = np.polynomial.polynomial.polyfit(np.array(x_train), np.array(y_data), degree)
         ffit = np.polynomial.Polynomial(coefs)

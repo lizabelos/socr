@@ -20,7 +20,7 @@ class DocumentGeneratedSet(Dataset):
         image = image_pillow_to_numpy(image)
 
         if self.loss is not None:
-            return torch.from_numpy(image), torch.from_numpy(self.loss.document_to_ytrue(label))
+            return torch.from_numpy(image), torch.from_numpy(self.loss.document_to_ytrue([image.shape[2], image.shape[1]], list(label)))
         else:
             return torch.from_numpy(image), None
 

@@ -37,7 +37,7 @@ cdef class BaselineEncoder:
         cdef int deltay = y1 - y0
         if deltax == 0:
             return self.draw_vertical_line(y_true, line)
-        cdef float deltaerr = abs(deltay / deltax)
+        cdef float deltaerr = abs(float(deltay) / float(deltax))
         cdef float error = 0.0
         cdef int y = y0
 

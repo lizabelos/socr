@@ -1,7 +1,11 @@
 import os
 import subprocess
 import sys
+from shutil import copyfile
+
 import git
+
+from socr.utils.logging.logger import print_warning
 
 
 def build_wrapctc():
@@ -9,11 +13,19 @@ def build_wrapctc():
     response = input()
 
     if response == "yes":
+        my_env = os.environ.copy()
+        my_env["CXX"] = "g++-5"
+        my_env["CMAKE_CXX_COMPILER"] = "g++5"
+        my_env["CC"] = "gcc-5"
+        my_env["CMAKE_C_COMPILER"] = "gcc-5"
+
         os.makedirs('submodules/warp-ctc', exist_ok=True)
         git.Git("submodules").clone("https://github.com/t-vi/warp-ctc.git")
-        res = subprocess.run([sys.executable, 'setup.py', 'build'], cwd='submodules/warp-ctc/pytorch_binding')
+        res = subprocess.run([sys.executable, 'setup.py', 'build'], cwd='submodules/warp-ctc/pytorch_binding',
+                             env=my_env)
         assert res.returncode == 0, "Error"
-        res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/warp-ctc/pytorch_binding')
+        res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/warp-ctc/pytorch_binding',
+                             env=my_env)
         assert res.returncode == 0, "Error"
     else:
         print("Goodbye :(")
@@ -32,3 +44,9 @@ def build_sru():
     else:
         print("Goodbye :(")
         exit(0)
+
+
+def load_default_datasets_cfg_if_not_exist():
+    if not os.path.isfile("datasets.cfg"):
+        print_warning("datasets.cfg not found. Copying datasets.exemple.cfg to datasets.cfg.")
+        copyfile("datasets.exemple.cfg", "datasets.cfg")

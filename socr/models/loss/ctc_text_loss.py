@@ -4,12 +4,14 @@ import torch
 
 from socr.utils import build_wrapctc
 
+# TODO : Use the new CTC text loss
+
 try:
-    from warpctc_pytorch import CTCLoss
+    from warpctc import CTCLoss
 except Exception as e:
     print(e)
     build_wrapctc()
-    from warpctc_pytorch import CTCLoss
+    from warpctc import CTCLoss
 import ctcdecode
 
 from . import Loss
@@ -41,7 +43,7 @@ class CTCTextLoss(Loss):
         batch_size = inputs.size(1)
         inputs_width = torch.autograd.Variable(torch.IntTensor([inputs_width] * batch_size), requires_grad=False)
 
-        return self.loss(inputs.contiguous(), labels, inputs_width, labels_length)
+        return self.loss(inputs.contiguous(), inputs_width, labels, labels_length)
 
     def process_labels(self, s_list, is_cuda=True):
         labels = []

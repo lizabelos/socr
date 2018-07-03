@@ -4,6 +4,10 @@ import cv2
 
 def connected_components(image):
     image = (np.clip(image, 0, 1) * 255).astype(np.uint8)
+
+    # kernel = np.ones((10, 10), np.uint8)
+    # image = cv2.dilate(image, kernel, iterations=1)
+
     ret, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_OTSU)
 
     # Marker labelling

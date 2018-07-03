@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 import torch
 
-from socr.utils.logging.logger import print_normal, print_warning, print_error
+from socr.utils.logging.logger import print_normal, print_warning, print_error, TerminalColors
 from socr.utils.maths.moving_average import MovingAverage
 
 
@@ -90,7 +90,7 @@ class Trainer:
             'userdata': self.checkpoint_userdata,
             'elapsed': self.elapsed
          }
-        torch.save(checkpoint, "autosave.pth.tar")
+        torch.save(checkpoint, self.checkpoint_name + ".autosave")
 
     def train(self, data_set, batch_size=1, callback=None):
         """
@@ -156,21 +156,21 @@ class Trainer:
             outputs = self.model(variable)
             loss_value = self.loss.forward(outputs, self.loss.process_labels(labels, is_cuda=is_cuda))
 
-            # loss_value_cpu = loss_value.data.cpu().numpy()
-            # if loss_value_cpu < 0:
-            #     sys.stdout.write("\nWarning : negative loss value, " + str(loss_value_cpu) + "\n")
-            #     sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-            #     continue
-            #
-            # if np.isnan(loss_value_cpu):
-            #     sys.stdout.write("\nWarning : nan loss value, " + str(loss_value_cpu) + "\n")
-            #     sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-            #     continue
-            #
-            # if np.isinf(loss_value_cpu):
-            #     sys.stdout.write("\nWarning : inf loss value, " + str(loss_value_cpu) + "\n")
-            #     sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-            #     continue
+            loss_value_cpu = loss_value.data.cpu().numpy()
+            if loss_value_cpu < 0:
+                sys.stdout.write("\nWarning : negative loss value, " + str(loss_value_cpu) + "\n")
+                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+                continue
+            
+            if np.isnan(loss_value_cpu):
+                sys.stdout.write("\nWarning : nan loss value, " + str(loss_value_cpu) + "\n")
+                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+                continue
+            
+            if np.isinf(loss_value_cpu):
+                sys.stdout.write("\nWarning : inf loss value, " + str(loss_value_cpu) + "\n")
+                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+                continue
 
             loss_value.backward()
 
@@ -187,7 +187,8 @@ class Trainer:
                 diff = end_time - self.start_time
                 self.start_time = end_time
                 self.elapsed = self.elapsed + diff.total_seconds()
-                sys.stdout.write('[%d, %5d] lr: %.8f; loss: %.8f ; current_loss : %.8f; time : %.8f\r' % (self.epoch + 1, (i * batch_size) + 1, self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed))
+                sys.stdout.write(TerminalColors.BOLD + '[%d, %5d] ' % (self.epoch + 1, (i * batch_size) + 1) + TerminalColors.ENDC)
+                sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed / 60))
 
         self.epoch = self.epoch + 1
         # self.adaptative_optimizer.step(self.moving_average.moving_average())
@@ -201,4 +202,3 @@ class Trainer:
 
         self.autosave()
         sys.stdout.write("\n")
-

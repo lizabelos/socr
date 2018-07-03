@@ -42,9 +42,11 @@ class XHeightCCLoss(Loss):
         return self.encoder.encode(image_size, base_lines)
 
     def show_ytrue(self, image, y_true):
+        y_true = np.swapaxes(y_true, 0, 2)
+        y_true = np.swapaxes(y_true, 1, 2)
         y_true = y_true[0]
-        image = np.stack((y_true, image[0], image[1]), axis=-1)
-        show_numpy_image(image, invert_axes=False)
+
+        show_numpy_image(image, invert_axes=True)
         show_connected_components(connected_components(y_true))
         show_numpy_image(y_true, invert_axes=False)
 
@@ -55,5 +57,5 @@ class XHeightCCLoss(Loss):
         return var
 
     def ytrue_to_lines(self, image, predicted, with_images=True):
-        return self.decoder.decode(image, predicted, with_images)
+        return self.decoder.decode(image, predicted, with_images, degree=3)
 

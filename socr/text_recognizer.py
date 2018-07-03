@@ -12,6 +12,7 @@ from socr.dataset import parse_datasets_configuration_file
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
 from socr.utils.image import show_pytorch_image
+from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer
 
@@ -45,6 +46,7 @@ class TextRecognizer:
         self.optimizer = get_optimizer_by_name(optimizer_name)(self.model.parameters(), lr=lr)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
+        load_default_datasets_cfg_if_not_exist()
         self.database_helper = DocumentGeneratorHelper()
         self.test_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=False, testing=True, args={"height": self.model.get_input_image_height(), "labels": self.labels, "transform":True})
 
