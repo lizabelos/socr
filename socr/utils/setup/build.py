@@ -72,10 +72,10 @@ def build_ctcdecode():
 
     if response == "yes":
         my_env = os.environ.copy()
-        my_env["CXX"] = "g++-5"
-        my_env["CMAKE_CXX_COMPILER"] = "g++5"
-        my_env["CC"] = "g++-5"
-        my_env["CMAKE_C_COMPILER"] = "g++-5"
+        my_env["CXX"] = "g++"
+        my_env["CMAKE_CXX_COMPILER"] = "g++"
+        my_env["CC"] = "g++"
+        my_env["CMAKE_C_COMPILER"] = "g++"
 
         os.makedirs('submodules/ctcdecode', exist_ok=True)
         git.Git("submodules").clone("https://github.com/parlance/ctcdecode.git", recursive=True)
