@@ -35,7 +35,7 @@ def build_wrapctc():
 def install_and_import_wrapctc():
     import importlib
     try:
-        importlib.import_module('warpctc')
+        importlib.import_module('wrapctc')
     except ImportError:
         build_wrapctc()
     finally:
