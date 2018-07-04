@@ -35,11 +35,11 @@ def build_wrapctc():
 def install_and_import_wrapctc():
     import importlib
     try:
-        importlib.import_module('wrapctc')
+        importlib.import_module('warpctc')
     except ImportError:
         build_wrapctc()
     finally:
-        globals()['wrapctc'] = importlib.import_module('wrapctc')
+        globals()['warpctc'] = importlib.import_module('warpctc')
 
 
 def build_sru():
