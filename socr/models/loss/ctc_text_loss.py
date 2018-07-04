@@ -3,8 +3,7 @@ import sys
 import torch
 
 from socr.utils import build_wrapctc
-
-# TODO : Use the new CTC text loss
+from socr.utils.setup.build import build_ctcdecode
 
 try:
     from warpctc import CTCLoss
@@ -12,7 +11,13 @@ except Exception as e:
     print(e)
     build_wrapctc()
     from warpctc import CTCLoss
-import ctcdecode
+
+try:
+    import ctcdecode
+except Exception as e:
+    print(e)
+    build_ctcdecode()
+    import ctcdecode
 
 from . import Loss
 

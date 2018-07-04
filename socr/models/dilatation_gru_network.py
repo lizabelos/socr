@@ -53,7 +53,7 @@ class DilatationGruNetwork(ConvolutionalModel):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=8, bidirectional=True, rnn_dropout=0.1, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
+        self.rnn = SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=4, bidirectional=True, rnn_dropout=0.4, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
         self.fc = torch.nn.Linear(256 * 2, self.output_numbers)
 

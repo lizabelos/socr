@@ -8,3 +8,4 @@ glymur
 msgpack
 cupy
 pynvrtc
+gitpython

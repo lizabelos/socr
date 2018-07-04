@@ -46,6 +46,20 @@ def build_sru():
         exit(0)
 
 
+def build_ctcdecode():
+    print("You need ctcdecode library to continue. Do you want to install it ? [yes/no]")
+    response = input()
+
+    if response == "yes":
+        os.makedirs('submodules/ctcdecode', exist_ok=True)
+        git.Git("submodules").clone("https://github.com/parlance/ctcdecode.git", recursive=True)
+        res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/ctcdecode')
+        assert res.returncode == 0, "Error"
+    else:
+        print("Goodbye :(")
+        exit(0)
+
+
 def load_default_datasets_cfg_if_not_exist():
     if not os.path.isfile("datasets.cfg"):
         print_warning("datasets.cfg not found. Copying datasets.exemple.cfg to datasets.cfg.")
