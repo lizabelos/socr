@@ -61,7 +61,7 @@ def install_and_import_sru():
     try:
         importlib.import_module('sru')
     except ImportError:
-        build_wrapctc()
+        build_sru()
     finally:
         globals()['sru'] = importlib.import_module('sru')
 
@@ -85,7 +85,7 @@ def install_and_import_ctcdecode():
     try:
         importlib.import_module('ctcdecode')
     except ImportError:
-        build_wrapctc()
+        build_ctcdecode()
     finally:
         globals()['ctcdecode'] = importlib.import_module('ctcdecode')
 
