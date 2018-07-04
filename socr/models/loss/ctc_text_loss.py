@@ -3,21 +3,10 @@ import sys
 import torch
 
 from socr.utils import build_wrapctc
-from socr.utils.setup.build import build_ctcdecode
+from socr.utils.setup.build import build_ctcdecode, install_and_import_wrapctc, install_and_import_ctcdecode
 
-try:
-    from warpctc import CTCLoss
-except Exception as e:
-    print(e)
-    build_wrapctc()
-    from warpctc import CTCLoss
-
-try:
-    import ctcdecode
-except Exception as e:
-    print(e)
-    build_ctcdecode()
-    import ctcdecode
+install_and_import_wrapctc()
+install_and_import_ctcdecode()
 
 from . import Loss
 
@@ -34,7 +23,7 @@ class CTCTextLoss(Loss):
 
         self.labels = labels
         self.labels_len = len(self.labels) + 1
-        self.loss = CTCLoss(size_average=False, length_average=False).cuda()
+        self.loss = warpctc.CTCLoss(size_average=False, length_average=False).cuda()
 
         self.decoder = ctcdecode.CTCBeamDecoder("_" + labels)
 

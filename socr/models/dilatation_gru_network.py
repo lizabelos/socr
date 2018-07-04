@@ -3,13 +3,9 @@ from collections import OrderedDict
 import torch
 
 from socr.nn.modules.resnet import ResNet, BasicBlock
-from socr.utils.setup.build import build_sru
+from socr.utils.setup.build import build_sru, install_and_import_sru
 
-try:
-    from sru import SRU
-except Exception:
-    build_sru()
-    from sru import SRU
+install_and_import_sru()
 
 from socr.models.convolutional_model import ConvolutionalModel
 from socr.nn import RNNLayer

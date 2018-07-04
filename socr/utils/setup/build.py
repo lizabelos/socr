@@ -32,6 +32,16 @@ def build_wrapctc():
         exit(0)
 
 
+def install_and_import_wrapctc():
+    import importlib
+    try:
+        importlib.import_module('warpctc')
+    except ImportError:
+        build_wrapctc()
+    finally:
+        globals()['wrapctc'] = importlib.import_module('wrapctc')
+
+
 def build_sru():
     print("You need sru library to continue. Do you want to install it ? [yes/no]")
     response = input()
@@ -46,6 +56,16 @@ def build_sru():
         exit(0)
 
 
+def install_and_import_sru():
+    import importlib
+    try:
+        importlib.import_module('sru')
+    except ImportError:
+        build_wrapctc()
+    finally:
+        globals()['sru'] = importlib.import_module('sru')
+
+
 def build_ctcdecode():
     print("You need ctcdecode library to continue. Do you want to install it ? [yes/no]")
     response = input()
@@ -53,11 +73,21 @@ def build_ctcdecode():
     if response == "yes":
         os.makedirs('submodules/ctcdecode', exist_ok=True)
         git.Git("submodules").clone("https://github.com/parlance/ctcdecode.git", recursive=True)
-        res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/ctcdecode')
+        res = subprocess.run([sys.executable, '-m', 'pip', 'install', '.'], cwd='submodules/ctcdecode')
         assert res.returncode == 0, "Error"
     else:
         print("Goodbye :(")
         exit(0)
+
+
+def install_and_import_ctcdecode():
+    import importlib
+    try:
+        importlib.import_module('ctcdecode')
+    except ImportError:
+        build_wrapctc()
+    finally:
+        globals()['ctcdecode'] = importlib.import_module('ctcdecode')
 
 
 def load_default_datasets_cfg_if_not_exist():
