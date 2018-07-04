@@ -29,14 +29,14 @@ class CTCTextLoss(Loss):
 
         self.labels = labels
         self.labels_len = len(self.labels) + 1
-        self.loss = CTCLoss(size_average=True, length_average=True).cuda()
+        self.loss = CTCLoss(size_average=False, length_average=False).cuda()
 
         self.decoder = ctcdecode.CTCBeamDecoder("_" + labels)
 
     def forward(self, inputs, truth):
         labels, labels_length = truth
         labels = torch.autograd.Variable(torch.IntTensor(labels), requires_grad=False)
-        labels_length = torch.autograd.Variable(torch.IntTensor([labels_length]), requires_grad=False)
+        labels_length = torch.autograd.Variable(torch.IntTensor(labels_length), requires_grad=False)
 
         # inputs = inputs.transpose(0, 1)
         inputs_width = inputs.size(0)
@@ -58,7 +58,7 @@ class CTCTextLoss(Loss):
                 # Assuming that space is that position 0
                 s_result.append(pos + 1)
             labels = labels + s_result
-            labels_length = labels_length + [len(s_result) - 1]
+            labels_length = labels_length + [len(s_result)]
 
         return labels, labels_length
 
