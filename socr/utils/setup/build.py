@@ -36,7 +36,7 @@ def install_and_import_wrapctc():
     import importlib
     try:
         importlib.import_module('warpctc')
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         build_wrapctc()
     finally:
         globals()['warpctc'] = importlib.import_module('warpctc')
@@ -60,7 +60,7 @@ def install_and_import_sru():
     import importlib
     try:
         importlib.import_module('sru')
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         build_sru()
     finally:
         globals()['sru'] = importlib.import_module('sru')
@@ -84,7 +84,7 @@ def install_and_import_ctcdecode():
     import importlib
     try:
         importlib.import_module('ctcdecode')
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         build_ctcdecode()
     finally:
         globals()['ctcdecode'] = importlib.import_module('ctcdecode')
