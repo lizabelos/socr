@@ -39,7 +39,7 @@ def install_and_import_wrapctc():
     except (ImportError, ModuleNotFoundError):
         build_wrapctc()
     finally:
-        globals()['warpctc'] = importlib.import_module('warpctc')
+        return importlib.import_module('warpctc')
 
 
 def build_sru():
@@ -63,7 +63,7 @@ def install_and_import_sru():
     except (ImportError, ModuleNotFoundError):
         build_sru()
     finally:
-        globals()['sru'] = importlib.import_module('sru')
+        return importlib.import_module('sru')
 
 
 def build_ctcdecode():
@@ -88,7 +88,7 @@ def install_and_import_ctcdecode():
     except (ImportError, ModuleNotFoundError):
         build_ctcdecode()
     finally:
-        globals()['ctcdecode'] = importlib.import_module('ctcdecode')
+        return importlib.import_module('ctcdecode')
 
 
 def load_default_datasets_cfg_if_not_exist():

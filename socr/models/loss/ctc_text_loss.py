@@ -5,8 +5,8 @@ import torch
 from socr.utils import build_wrapctc
 from socr.utils.setup.build import build_ctcdecode, install_and_import_wrapctc, install_and_import_ctcdecode
 
-install_and_import_wrapctc()
-install_and_import_ctcdecode()
+warpctc = install_and_import_wrapctc()
+ctcdecode = install_and_import_ctcdecode()
 
 from . import Loss
 

@@ -133,7 +133,7 @@ class TextRecognizer:
         wer = (100.0 * (wer_s + wer_i + wer_d)) / wer_n
         ser = (100.0 * sen_err) / count
 
-        print_normal("Testing...100%. WER : " + str(wer) + "; CER : " + str(cer) + "; SER : " + str(ser) + "\n")
+        print_normal("WER : %.3f; CER : %.3f; SER : %.3f \n" % (cer, wer, ser))
         return wer
 
     def generateandexecute(self, onlyhand=False):

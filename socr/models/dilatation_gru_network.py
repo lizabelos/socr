@@ -5,7 +5,7 @@ import torch
 from socr.nn.modules.resnet import ResNet, BasicBlock
 from socr.utils.setup.build import build_sru, install_and_import_sru
 
-install_and_import_sru()
+sru = install_and_import_sru()
 
 from socr.models.convolutional_model import ConvolutionalModel
 from socr.nn import RNNLayer
