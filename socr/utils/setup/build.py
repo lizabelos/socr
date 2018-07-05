@@ -71,15 +71,10 @@ def build_ctcdecode():
     response = input()
 
     if response == "yes":
-        my_env = os.environ.copy()
-        my_env["CXX"] = "g++"
-        my_env["CMAKE_CXX_COMPILER"] = "g++"
-        my_env["CC"] = "g++"
-        my_env["CMAKE_C_COMPILER"] = "g++"
 
         os.makedirs('submodules/ctcdecode', exist_ok=True)
-        git.Git("submodules").clone("https://github.com/parlance/ctcdecode.git", recursive=True)
-        res = subprocess.run([sys.executable, '-m', 'pip', 'install', '.'], cwd='submodules/ctcdecode', env=my_env)
+        git.Git("submodules").clone("https://github.com/belosthomas/ctcdecode.git", recursive=True)
+        res = subprocess.run([sys.executable, '-m', 'pip', 'install', '.'], cwd='submodules/ctcdecode')
         assert res.returncode == 0, "Error"
     else:
         print("Goodbye :(")
