@@ -101,9 +101,32 @@ train = /dataset/iam-washington/
 Execute ```./launch line``` to train the line recognizer.
 Execute ```./launch line --generateandexecute``` to test the line recognizer.
 
+Use ```./launch line --help``` for more help.
+
 ### How to train/test the ocr network ?
 
 Execute ```./launch text``` to train the ocr network.
-Execute ```./launch text --generateandexecute``` to test the ocr network.
+Execute ```./launch text --evaluate [path]``` to test the ocr network. The result are placed under the ```results``` folder.
 
-You can use the three ```--model```, ```--optimizer```, ```--lr``` to specify the model and the opitmizer to use.
+Use ```./launch text --help``` for more help.
+
+### Command line arguments
+
+You can select a model using the ```--model [MODEL]``` argument, and give a custom name to a model by using ```--name``` argument.
+When ```CTRL-C``` is pressed, the program will ask you to save the weight or not. The weights are saved under the checkpoints folder, with the given name as argument, or with the model name if no name is specified.
+The programe will automatically load the good model.
+
+In can of problem, a backup of the weights are made with the extension ```.autosave``` under the ```checkpoints``` folder.
+
+The ```--lr [lr]``` option permit to select the initial learning rate. Use ```--overlr``` to override the current learning rate.
+
+The ```--bs``` option permit to specify a batch size.
+
+### Multi-GPU
+
+Use ```CUDA_VISIBLE_DEVICES=0,1``` to select the available GPU. SOCR will use all available GPU if you are training, or one GPU if you only evaluate.
+
+## Make a custom model
+
+You can make a custom model by placing it under the ```models``` folder. See ```dilatation_gru_network.py``` and ```dhSegment.py``` for example.
+Each model has to be declared into the ```__init__.py``` file under the ```models``` folder.
