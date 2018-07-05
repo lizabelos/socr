@@ -255,13 +255,12 @@ def main(sysarg):
     parser.add_argument('--name', type=str, default=None)
     args = parser.parse_args(sysarg)
 
+    download_resources()
     line_recognizer = LineLocalizator(args.model, args.lr, args.name, not args.disablecuda)
 
     if args.testgenerator:
-        download_resources()
         line_recognizer.test_generator()
     elif args.generateandexecute:
-        download_resources()
         line_recognizer.eval()
         line_recognizer.generateandexecute()
     elif args.execute is not None:
@@ -271,7 +270,6 @@ def main(sysarg):
         line_recognizer.eval()
         line_recognizer.evaluate(args.evaluate)
     else:
-        download_resources()
         if args.overlr:
             line_recognizer.train(args.bs, args.lr)
         else:
