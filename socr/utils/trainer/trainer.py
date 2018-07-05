@@ -25,6 +25,8 @@ class Trainer:
         :param clip_gradient: The value to clip is not none, during training.
         :param checkpoint_userdata: Complements data to save with the checkpoint.
         """
+        os.makedirs('checkpoints', exist_ok=True)
+
         if checkpoint_userdata is None:
             checkpoint_userdata = {}
         self.model = torch.nn.DataParallel(model)
