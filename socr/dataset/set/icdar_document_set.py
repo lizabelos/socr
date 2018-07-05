@@ -148,7 +148,7 @@ class ICDARDocumentSet(Dataset):
 
         width, height = image.size
         # new_height = randint(height // 8, height // 2)
-        new_height = randint(1000, 1200)
+        new_height = 1024
         image = image.resize((width * new_height // height, new_height), Image.ANTIALIAS)
 
         new_regions = []
@@ -161,7 +161,11 @@ class ICDARDocumentSet(Dataset):
             h = h * new_height // height
             new_regions.append([x0, y0, x1, y1, h])
 
-        label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
+        if os.path.isfile(image_path + ".npy"):
+            label = np.load(image_path + ".npy")
+        else:
+            label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
+            np.save(image_path + ".npy", label)
 
         image = image_pillow_to_numpy(image)
 
@@ -181,4 +185,4 @@ class ICDARDocumentSet(Dataset):
         return torch.from_numpy(image), torch.from_numpy(label)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.labels) * 32

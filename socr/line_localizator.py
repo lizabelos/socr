@@ -39,7 +39,7 @@ class LineLocalizator:
             self.model = self.model.cuda()
             self.loss = self.loss.cuda()
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=0.000001)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
         self.maximum_height = 1024

@@ -85,9 +85,32 @@ class Bottleneck(nn.Module):
         return out
 
 
+class PSPUpsample(nn.Module):
+    def __init__(self, in_channels, out_channels, bn=True):
+        super().__init__()
+        if bn:
+            self.conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 3, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.PReLU()
+            )
+        else:
+            self.conv = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 3, padding=1),
+                nn.PReLU()
+            )
+
+    def forward(self, x, addition=None):
+        h, w = 2 * x.size(2), 2 * x.size(3)
+        p = F.upsample(input=x, size=(h, w), mode='bilinear')
+        if addition is not None:
+            p = torch.cat((p, addition), dim=1)
+        return self.conv(p)
+
+
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, strides=None, bn=True):
+    def __init__(self, block, layers, strides=None, bn=True, upsample=False):
         if strides is None:
             strides = [1, 2, 2, 2]
 
@@ -168,6 +191,7 @@ def resnet152(**kwargs):
     model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
     return model
 
+
 class PSPModule(nn.Module):
     def __init__(self, features, out_features=1024, sizes=(1, 2, 3, 6)):
         super().__init__()
@@ -186,25 +210,3 @@ class PSPModule(nn.Module):
         priors = [F.upsample(input=stage(feats), size=(h, w), mode='bilinear') for stage in self.stages] + [feats]
         bottle = self.bottleneck(torch.cat(priors, 1))
         return self.relu(bottle)
-
-
-class PSPUpsample(nn.Module):
-    def __init__(self, in_channels, out_channels, bn=True):
-        super().__init__()
-        if bn:
-            self.conv = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, 3, padding=1),
-                nn.BatchNorm2d(out_channels),
-                nn.PReLU()
-            )
-        else:
-            self.conv = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, 3, padding=1),
-                nn.PReLU()
-            )
-
-
-    def forward(self, x):
-        h, w = 2 * x.size(2), 2 * x.size(3)
-        p = F.upsample(input=x, size=(h, w), mode='bilinear')
-        return self.conv(p)
