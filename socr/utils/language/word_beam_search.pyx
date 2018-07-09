@@ -18,6 +18,7 @@ cpdef wordBeamSearch(float[:,:] mat, int beamWidth, LanguageModel lm, bint useNG
 
     cdef BeamList curr
     cdef Beam beam
+    cdef list bestBeams
 
     cdef float prNonBlank
     cdef float prBlank
@@ -28,7 +29,6 @@ cpdef wordBeamSearch(float[:,:] mat, int beamWidth, LanguageModel lm, bint useNG
 
     # go over all time-steps
     for t in range(maxT):
-        print(str(t) + " " + str(maxT))
         curr = BeamList()  # list of beams at current time-step
 
         # go over best beams
@@ -68,4 +68,5 @@ cpdef wordBeamSearch(float[:,:] mat, int beamWidth, LanguageModel lm, bint useNG
     # return most probable beam
     last.completeBeams(lm)
     bestBeams = last.getBestBeams(1)  # sort by probability
-    return bestBeams[0].getText()
+    cdef Beam bestBeam = bestBeams[0]
+    return bestBeam.getText()

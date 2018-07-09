@@ -87,7 +87,7 @@ class TextRecognizer:
         Called during the training to test the network
         :return: The average cer
         """
-        self.model.eval()
+        self.eval()
         return self.test(limit=32)
 
     def eval(self):
@@ -96,9 +96,12 @@ class TextRecognizer:
         """
         self.model.eval()
 
-        with open(self.trainer.checkpoint_name + ".corpus", "r") as content_file:
-            self.corpus = content_file.read()
-        self.lm = LanguageModel(self.corpus, self.labels, self.word_labels)
+        if self.lm is None:
+            with open(self.trainer.checkpoint_name + ".corpus", "r") as content_file:
+                self.corpus = content_file.read()
+
+            print_normal("Initializing language model...")
+            self.lm = LanguageModel(self.corpus, self.labels, self.word_labels)
 
     def test(self, limit=None):
         """
