@@ -23,8 +23,9 @@ class DilatationGruNetwork(ConvolutionalModel):
         self.activation = torch.nn.ReLU()
 
         self.convolutions = torch.nn.Sequential(OrderedDict([
-            ('first', torch.nn.Conv2d(3, 64, kernel_size=7, padding=3, stride=(2, 1), bias=False)),
+            ('first', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
             ('activation', torch.nn.ReLU()),
+            ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
             ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], strides=[1, (2, 1), (2, 1), (2, 1)], bn=False)),
 
             # ('conv1-1', torch.nn.Conv2d(3, 64, kernel_size=3)),

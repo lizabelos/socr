@@ -1,12 +1,9 @@
-import sys
-
 import torch
 
-from socr.utils import build_wrapctc
-from socr.utils.setup.build import build_ctcdecode, install_and_import_wrapctc, install_and_import_ctcdecode
+from socr.utils.language.word_beam_search import wordBeamSearch
+from socr.utils.setup.build import install_and_import_wrapctc, install_and_import_ctcdecode
 
 warpctc = install_and_import_wrapctc()
-ctcdecode = install_and_import_ctcdecode()
 
 from . import Loss
 
@@ -56,9 +53,9 @@ class CTCTextLoss(Loss):
 
         return labels, labels_length
 
-    def ytrue_to_lines(self, sequence):
-        beam_result, beam_scores, timesteps, out_seq_len = self.decoder.decode(sequence.data)
-        return self.convert_to_string(beam_result[0][0], [""] + list(self.labels), out_seq_len[0][0])
+    def ytrue_to_lines(self, lm, sequence):
+        result = wordBeamSearch(sequence[0].data.cpu().numpy(), 10, lm, True)
+        return ''.join([lm.labels[x] for x in result])
 
     def convert_to_string(self, tokens, vocab, seq_len):
         return ''.join([vocab[x] for x in tokens[0:seq_len]])

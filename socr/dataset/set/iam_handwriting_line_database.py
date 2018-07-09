@@ -56,6 +56,12 @@ class IAMHandwritingLineDatabase(Dataset):
 
         return root_dict["text"]
 
+    def get_corpus(self):
+        corpus = ""
+        for id, text in self.labels:
+            corpus = corpus + " " + text
+        return corpus
+
     def __getitem__(self, index):
         id, text = self.labels[index]
         ids = id.split("-")

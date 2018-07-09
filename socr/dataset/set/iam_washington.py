@@ -39,6 +39,12 @@ class IAMWashington(Dataset):
         image_path = self.get_image_path(ids)
         return image_path, text
 
+    def get_corpus(self):
+        corpus = ""
+        for id, text in self.labels:
+            corpus = corpus + " " + text
+        return corpus
+
     def __getitem__(self, index):
         image_path, text = self.labels[index]
 

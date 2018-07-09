@@ -66,31 +66,6 @@ def install_and_import_sru():
         return importlib.import_module('sru')
 
 
-def build_ctcdecode():
-    print("You need ctcdecode library to continue. Do you want to install it ? [yes/no]")
-    response = input()
-
-    if response == "yes":
-
-        os.makedirs('submodules/ctcdecode', exist_ok=True)
-        git.Git("submodules").clone("https://github.com/belosthomas/ctcdecode.git", recursive=True)
-        res = subprocess.run([sys.executable, '-m', 'pip', 'install', '.'], cwd='submodules/ctcdecode')
-        assert res.returncode == 0, "Error"
-    else:
-        print("Goodbye :(")
-        exit(0)
-
-
-def install_and_import_ctcdecode():
-    import importlib
-    try:
-        importlib.import_module('ctcdecode')
-    except (ImportError, ModuleNotFoundError):
-        build_ctcdecode()
-    finally:
-        return importlib.import_module('ctcdecode')
-
-
 def load_default_datasets_cfg_if_not_exist():
     if not os.path.isfile("datasets.cfg"):
         print_warning("datasets.cfg not found. Copying datasets.exemple.cfg to datasets.cfg.")

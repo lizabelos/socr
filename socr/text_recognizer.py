@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from random import randint
 
@@ -12,6 +13,7 @@ from socr.dataset import parse_datasets_configuration_file
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
 from socr.utils.image import show_pytorch_image
+from socr.utils.language.language_model import LanguageModel
 from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer
@@ -35,6 +37,9 @@ class TextRecognizer:
         with open("resources/characters.txt", "r") as content_file:
             self.labels = content_file.read() + " "
 
+        with open("resources/word_characters.txt", "r") as content_file:
+            self.word_labels = content_file.read()
+
         self.document_helper = DocumentGeneratorHelper()
 
         self.model = get_model_by_name(model_name)(self.labels)
@@ -48,9 +53,14 @@ class TextRecognizer:
 
         load_default_datasets_cfg_if_not_exist()
         self.database_helper = DocumentGeneratorHelper()
-        self.test_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=False, testing=True, args={"height": self.model.get_input_image_height(), "labels": self.labels, "transform":True})
-
+        self.test_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=False,
+                                                               testing=True,
+                                                               args={"height": self.model.get_input_image_height(),
+                                                                     "labels": self.labels, "transform": True})
         print_normal("Test database length : " + str(self.test_database.__len__()))
+
+        self.corpus = None
+        self.lm = None
 
     def train(self, overlr=None):
         """
@@ -61,10 +71,15 @@ class TextRecognizer:
         if overlr is not None:
             self.set_lr(overlr)
 
-        train_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=True, testing=False,
+        train_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=True,
+                                                           testing=False,
                                                            args={"height": self.model.get_input_image_height(),
                                                                  "labels": self.labels}
                                                            )
+        if not os.path.isfile(self.trainer.checkpoint_name + ".corpus"):
+            with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
+                corpus.write(train_database.get_corpus())
+
         self.trainer.train(train_database, callback=lambda: self.trainer_callback())
 
     def trainer_callback(self):
@@ -80,6 +95,10 @@ class TextRecognizer:
         Evaluate the model
         """
         self.model.eval()
+
+        with open(self.trainer.checkpoint_name + ".corpus", "r") as content_file:
+            self.corpus = content_file.read()
+        self.lm = LanguageModel(self.corpus, self.labels, self.word_labels)
 
     def test(self, limit=None):
         """
@@ -104,7 +123,7 @@ class TextRecognizer:
             image, label = self.test_database.__getitem__(i)
 
             result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
-            text = self.loss.ytrue_to_lines(result)
+            text = self.loss.ytrue_to_lines(self.lm, result)
 
             # update CER statistics
             _, (s, i, d) = levenshtein(label, text)
@@ -169,7 +188,7 @@ class TextRecognizer:
             image = np.resize(image, (image_channels, image_width * height // image_height, height))
 
             result = self.model(torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cuda())
-            text = self.loss.ytrue_to_lines(result)
+            text = self.loss.ytrue_to_lines(self.lm, result)
 
             texts.append(text)
 

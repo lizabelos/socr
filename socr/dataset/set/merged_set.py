@@ -17,3 +17,6 @@ class MergedSet(Dataset):
 
     def __len__(self):
         return self.d1_len + self.d2_len
+
+    def get_corpus(self):
+        return self.d1.get_corpus() + " " + self.d2.get_corpus()
