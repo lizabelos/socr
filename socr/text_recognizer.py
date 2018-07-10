@@ -88,7 +88,7 @@ class TextRecognizer:
         :return: The average cer
         """
         self.eval()
-        return self.test(limit=1)
+        return self.test(limit=32)
 
     def eval(self):
         """
