@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 import torch
 
-from socr.nn.modules.resnet import ResNet, BasicBlock
+from socr.nn.modules.resnet import ResNet, BasicBlock, Bottleneck
 from socr.utils.setup.build import build_sru, install_and_import_sru
 
 sru = install_and_import_sru()
@@ -26,7 +26,7 @@ class DilatationGruNetwork(ConvolutionalModel):
             ('first', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
             ('activation', torch.nn.ReLU()),
             ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-            ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], strides=[1, (2, 1), (2, 1), (2, 1)], bn=False)),
+            ('resnet', ResNet(Bottleneck, [3, 4, 6, 3], strides=[1, (2, 1), (2, 1), (2, 1)], bn=False)),
 
             # ('conv1-1', torch.nn.Conv2d(3, 64, kernel_size=3)),
             # ('activation1-1', self.activation),
@@ -50,14 +50,10 @@ class DilatationGruNetwork(ConvolutionalModel):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=4, bidirectional=True, rnn_dropout=0.4, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
+        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6, bidirectional=True, rnn_dropout=0.4, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
         self.fc = torch.nn.Linear(256 * 2, self.output_numbers)
 
-        print(self.convolutions)
-        print(self.convolutions_output_size)
-        print(self.rnn)
-        print(self.fc)
 
     def forward_cnn(self, x):
         return self.convolutions(x)

@@ -8,11 +8,14 @@ import git
 from socr.utils.logging.logger import print_warning
 
 
-def build_wrapctc():
-    print("You need wrapctc library to continue. Do you want to install it ? [yes/no]")
-    response = input()
+def build_wrapctc(no_confirm = False):
+    if not no_confirm:
+        print("You need wrapctc library to continue. Do you want to install it ? [yes/no]")
+        response = input()
+    else:
+        response = "yes"
 
-    if response == "yes":
+    if  response == "yes":
         my_env = os.environ.copy()
         my_env["CXX"] = "g++-5"
         my_env["CMAKE_CXX_COMPILER"] = "g++5"
@@ -42,9 +45,12 @@ def install_and_import_wrapctc():
         return importlib.import_module('warpctc')
 
 
-def build_sru():
-    print("You need sru library to continue. Do you want to install it ? [yes/no]")
-    response = input()
+def build_sru(no_confirm = False):
+    if not no_confirm:
+        print("You need sru library to continue. Do you want to install it ? [yes/no]")
+        response = input()
+    else:
+        response = "yes"
 
     if response == "yes":
         os.makedirs('submodules/sru', exist_ok=True)

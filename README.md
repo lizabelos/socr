@@ -6,6 +6,8 @@ Structured OCR is a line localization and text extraction tools using Deep Learn
 
 ## Requirements
 
+**INFORMATION** : You can use ```python3 setup.py install_requirements``` to install all the requirements in one time !
+
  - A Linux or a Mac computer with CUDA 8 minimum
  - Python 3 with Anaconda
  - PyTorch 0.4 : ```conda install pytorch -c pytorch```

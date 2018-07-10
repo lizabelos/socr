@@ -7,11 +7,10 @@ from random import randint
 import torch
 from PIL import Image, ImageDraw
 
-from socr import print_normal
 from socr.dataset import parse_datasets_configuration_file, DocumentGeneratorHelper
 from socr.dataset.set.file_dataset import FileDataset
 from socr.models import get_model_by_name
-from socr.utils.logging.logger import print_warning
+from socr.utils.logging.logger import print_warning, print_normal
 from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer

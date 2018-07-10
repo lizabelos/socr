@@ -3,7 +3,7 @@ import zipfile
 
 import wget
 
-from socr import print_normal
+from socr.utils.logging.logger import print_normal
 
 
 def download_resources():

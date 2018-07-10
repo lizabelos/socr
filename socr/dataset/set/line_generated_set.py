@@ -1,10 +1,8 @@
 import torch
 from PIL import Image
-import numpy as np
 from torch.utils.data.dataset import Dataset
 
 from socr.dataset.generator.line_generator import LineGenerator
-from socr.utils.image.degrade import gauss_degrade, gauss_distort
 from socr.utils.image import image_pillow_to_numpy
 
 
@@ -40,3 +38,5 @@ class LineGeneratedSet(Dataset):
 
         return image, document
 
+    def get_corpus(self):
+        return ". ".join(self.document_generator.helper.preloaded_texts)

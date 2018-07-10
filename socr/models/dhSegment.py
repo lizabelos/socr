@@ -4,10 +4,10 @@ import torch
 import torch.utils.model_zoo as model_zoo
 from torch.nn import Parameter
 
-from socr import print_normal
 from socr.models.convolutional_model import ConvolutionalModel
 from socr.models.loss.x_height_cc_loss import XHeightCCLoss
 from socr.nn.modules.resnet import PSPUpsample, BasicBlock
+from socr.utils.logging.logger import print_normal
 
 
 class dhSegment(ConvolutionalModel):
@@ -28,8 +28,6 @@ class dhSegment(ConvolutionalModel):
         self.up2 = PSPUpsample(512 + 128, 256, bn=True)
         self.up3 = PSPUpsample(256 + 64, 128, bn=True)
         self.up4 = PSPUpsample(128 + 3, 64, bn=True)
-
-        print(self)
 
         print_normal("Downloading pretrained model from pytorch model zoo...")
         pretrained_model = model_zoo.load_url("https://download.pytorch.org/models/resnet18-5c106cde.pth")

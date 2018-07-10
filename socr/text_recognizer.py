@@ -8,12 +8,13 @@ import torch
 from PIL import Image
 from socr.utils.rating.word_error_rate import levenshtein
 
-from socr import print_normal
 from socr.dataset import parse_datasets_configuration_file
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
 from socr.utils.image import show_pytorch_image
 from socr.utils.language.language_model import LanguageModel
+
+from socr.utils.logging.logger import print_normal
 from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer

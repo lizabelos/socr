@@ -59,7 +59,10 @@ class IAMHandwritingLineDatabase(Dataset):
     def get_corpus(self):
         corpus = ""
         for id, text in self.labels:
-            corpus = corpus + " " + text
+            if corpus == "":
+                corpus = text
+            else:
+                corpus = corpus + ". " + text
         return corpus
 
     def __getitem__(self, index):

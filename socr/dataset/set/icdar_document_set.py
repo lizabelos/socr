@@ -1,5 +1,6 @@
+import math
 import os
-from random import randint, random
+from random import randint, random, uniform
 
 import torch
 import numpy as np
@@ -147,9 +148,12 @@ class ICDARDocumentSet(Dataset):
             return self.__getitem__(randint(0, self.__len__() - 1))
 
         width, height = image.size
-        new_height = randint(700, 1200)
-        # new_height = 1024
-        image = image.resize((width * new_height // height, new_height), Image.ANTIALIAS)
+        new_width = math.sqrt(6 * (10 ** 5) * width / height)
+        new_width = new_width * uniform(0.8, 1.2)
+        new_width = int(new_width)
+        new_height = height * new_width // width
+
+        image = image.resize((new_width, new_height), Image.ANTIALIAS)
 
         new_regions = []
         for region in regions:
@@ -166,14 +170,15 @@ class ICDARDocumentSet(Dataset):
         # else:
         #     label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
         #     np.save(image_path + ".npy", label)
-        label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
+        label = self.loss.document_to_ytrue([new_width, new_height], new_regions)
+
 
         image = image_pillow_to_numpy(image)
 
         if self.transform:
             # Make the crop
-            crop_width = 256
-            crop_height = 256
+            crop_width = 300
+            crop_height = 300
             crop_x = randint(0, image.shape[2] - crop_width)
             crop_y = randint(0, image.shape[1] - crop_height)
 
@@ -182,6 +187,7 @@ class ICDARDocumentSet(Dataset):
                              axis=0)
 
             image = self.helper.augment(image, distort=False)
+
 
         return torch.from_numpy(image), torch.from_numpy(label)
 
