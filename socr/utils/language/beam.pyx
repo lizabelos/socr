@@ -1,3 +1,6 @@
+#cython: boundscheck=False
+#cython: cdivision=True
+
 from __future__ import print_function
 from __future__ import division
 import copy
@@ -148,7 +151,8 @@ cdef class BeamList:
         "return best beams, specify the max. number of beams to be returned (beam width)"
         u = [v for (_, v) in self.beams.items()]
         lmWeight = 1
-        return sorted(u, reverse=True, key=lambda x: self.sortedLambda(x, lmWeight))[:num]
+        u = sorted(u, reverse=True, key=lambda x: self.sortedLambda(x, lmWeight))[:num]
+        return u
 
     cdef deletePartialBeams(self, LanguageModel lm):
         "delete beams for which last word is not finished"

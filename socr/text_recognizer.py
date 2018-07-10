@@ -88,7 +88,7 @@ class TextRecognizer:
         :return: The average cer
         """
         self.eval()
-        return self.test(limit=32)
+        return self.test(limit=1)
 
     def eval(self):
         """
@@ -110,7 +110,7 @@ class TextRecognizer:
         :param limit: Limit of images of the test
         :return: The average cer
         """
-        loader = torch.utils.data.DataLoader(self.test_database, batch_size=1, shuffle=False, num_workers=4)
+        loader = torch.utils.data.DataLoader(self.test_database, batch_size=1, shuffle=False, num_workers=1)
 
         test_len = len(self.test_database)
         if limit is not None:
@@ -127,6 +127,11 @@ class TextRecognizer:
 
             result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
             text = self.loss.ytrue_to_lines(self.lm, result)
+
+            if count == 0:
+                print(text)
+                print(label)
+                print("\n")
 
             # update CER statistics
             _, (s, i, d) = levenshtein(label, text)
@@ -148,14 +153,14 @@ class TextRecognizer:
 
             sys.stdout.write("Testing..." + str(count * 100 // test_len) + "%\r")
 
-            if count == test_len - 1:
+            if count == test_len:
                 break
 
         cer = (100.0 * (cer_s + cer_i + cer_d)) / cer_n
         wer = (100.0 * (wer_s + wer_i + wer_d)) / wer_n
         ser = (100.0 * sen_err) / count
 
-        print_normal("WER : %.3f; CER : %.3f; SER : %.3f \n" % (cer, wer, ser))
+        print_normal("CER : %.3f; WER : %.3f; SER : %.3f \n" % (cer, wer, ser))
         return wer
 
     def generateandexecute(self, onlyhand=False):
