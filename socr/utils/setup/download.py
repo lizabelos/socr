@@ -7,7 +7,7 @@ from socr.utils.logging.logger import print_normal
 
 
 def download_resources():
-    if not os.path.isdir("resources"):
+    if not os.path.isdir("resources/fonts"):
         url = "https://www.dropbox.com/s/3wcp26el8x5na4j/resources.zip?dl=1"
 
         print_normal("Dowloading resources...")
