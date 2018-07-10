@@ -2,13 +2,12 @@ from collections import OrderedDict
 
 import torch
 
-from socr.nn.modules.resnet import ResNet, BasicBlock, Bottleneck
-from socr.utils.setup.build import build_sru, install_and_import_sru
+from socr.nn.modules.resnet import ResNet, Bottleneck
+from socr.utils.setup.build import install_and_import_sru
 
 sru = install_and_import_sru()
 
 from socr.models.convolutional_model import ConvolutionalModel
-from socr.nn import RNNLayer
 from socr.models.loss import CTCTextLoss
 
 
