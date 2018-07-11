@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 import torch
 
+from socr.nn import IndRNN
 from socr.nn.modules.resnet import ResNet, Bottleneck
 from socr.utils.setup.build import install_and_import_sru
 
@@ -22,10 +23,11 @@ class DilatationGruNetwork(ConvolutionalModel):
         self.activation = torch.nn.ReLU()
 
         self.convolutions = torch.nn.Sequential(OrderedDict([
-            ('first', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
-            ('activation', torch.nn.ReLU()),
+            ('conv1', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
+            ('bn1', torch.nn.BatchNorm2d(64)),
+            ('activation', torch.nn.ReLU(inplace=True)),
             ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-            ('resnet', ResNet(Bottleneck, [3, 4, 6, 3], strides=[1, (2, 1), (2, 1), (2, 1)], bn=False)),
+            ('resnet', ResNet(Bottleneck, [3, 4, 6, 3], strides=[1, (2, 1), (2, 1), (2, 1)], bn=True)),
 
             # ('conv1-1', torch.nn.Conv2d(3, 64, kernel_size=3)),
             # ('activation1-1', self.activation),
@@ -49,10 +51,14 @@ class DilatationGruNetwork(ConvolutionalModel):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6, bidirectional=True, rnn_dropout=0.4, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
+        self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, n_layer=3,
+                          bidirectional=True, batch_norm=True)
+
+        # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
+        #                    bidirectional=True, rnn_dropout=0.4, use_tanh=1, use_relu=0, layer_norm=False,
+        #                    weight_norm=True)
 
         self.fc = torch.nn.Linear(256 * 2, self.output_numbers)
-
 
     def forward_cnn(self, x):
         return self.convolutions(x)
@@ -88,4 +94,14 @@ class DilatationGruNetwork(ConvolutionalModel):
         return CTCTextLoss(self.labels)
 
     def adaptative_learning_rate(self, optimizer):
-        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
+        return torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.1)
+
+    def collate(self, batch):
+        data = [item[0] for item in batch]  # just form a list of tensor
+        max_width = max([d.size()[2] for d in data])
+
+        data = [torch.nn.functional.pad(d, (0, max_width - d.size()[2], 0, 0)) for d in data]
+        data = torch.stack(data)
+
+        target = [item[1] for item in batch]
+        return [data, target]

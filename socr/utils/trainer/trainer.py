@@ -29,6 +29,7 @@ class Trainer:
 
         if checkpoint_userdata is None:
             checkpoint_userdata = {}
+        self.original_model = model
         self.model = torch.nn.DataParallel(model)
         self.loss = loss
         self.optimizer = optimizer
@@ -103,7 +104,11 @@ class Trainer:
         :param callback: A test function to call after every epochs. The returned value from this function will be writed into the CSV as test accuracy value.
         """
         self.moving_average = MovingAverage(max(data_set.__len__() // batch_size, 1024))
-        loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4)
+
+        if hasattr(self.original_model, "collate"):
+            loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=self.original_model.collate)
+        else:
+            loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4)
         try:
             if os.path.exists(self.csv_name):
                 append_write = 'a'

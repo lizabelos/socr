@@ -32,7 +32,7 @@ class CTCTextLoss(Loss):
         batch_size = inputs.size(1)
         inputs_width = torch.autograd.Variable(torch.IntTensor([inputs_width] * batch_size), requires_grad=False)
 
-        return self.loss(inputs.contiguous(), inputs_width, labels, labels_length)
+        return self.loss(inputs.contiguous(), inputs_width, labels, labels_length) / batch_size
 
     def process_labels(self, s_list, is_cuda=True):
         labels = []

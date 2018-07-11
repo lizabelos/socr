@@ -63,7 +63,7 @@ class TextRecognizer:
         self.corpus = None
         self.lm = None
 
-    def train(self, overlr=None):
+    def train(self, batch_size=1, overlr=None):
         """
         Train the network
 
@@ -81,7 +81,7 @@ class TextRecognizer:
             with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
                 corpus.write(train_database.get_corpus())
 
-        self.trainer.train(train_database, callback=lambda: self.trainer_callback())
+        self.trainer.train(train_database, batch_size=batch_size, callback=lambda: self.trainer_callback())
 
     def trainer_callback(self):
         """
@@ -230,6 +230,7 @@ class TextRecognizer:
 
 def main(sysarg):
     parser = argparse.ArgumentParser(description="SOCR Text Recognizer")
+    parser.add_argument('--bs', type=int, default=1)
     parser.add_argument('--model', type=str, default="DilatationGruNetwork", help="Model name")
     parser.add_argument('--optimizer', type=str, default="Adam", help="SGD, RMSProp, Adam")
     parser.add_argument('--name', type=str, default=None)
@@ -255,6 +256,6 @@ def main(sysarg):
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)
         if args.overlr:
-            line_ctc.train(args.lr)
+            line_ctc.train(args.bs, args.lr)
         else:
-            line_ctc.train()
+            line_ctc.train(args.bs)
