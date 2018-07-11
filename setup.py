@@ -31,7 +31,6 @@ class InstallRequirements(distutils.cmd.Command):
         self.cwd = os.getcwd()
 
     def run(self):
-        from socr.utils.setup.build import build_sru, build_wrapctc
 
         res = subprocess.run(
             [sys.executable, '-m', 'conda', 'install', '-y', 'pytorch=0.4', '-c', 'pytorch'])
@@ -43,6 +42,8 @@ class InstallRequirements(distutils.cmd.Command):
         res = subprocess.run([sys.executable, '-m', 'conda', 'install', '-y', '--channel', 'https://conda.anaconda.org/menpo', 'opencv3'])
         assert res.returncode == 0, "Error"
 
+        from socr.utils.setup.build import build_sru, build_wrapctc
+		
         build_sru(no_confirm=True)
         build_wrapctc(no_confirm=True)
 

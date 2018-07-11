@@ -15,7 +15,12 @@ Structured OCR is a line localization and text extraction tools using Deep Learn
  - All the package specified in the ```requirements.txt``` file. You can install all the package by using : ```pip install -r requirements.txt```
  - OpenCV 3 for Python. You can install it using ```conda install --channel https://conda.anaconda.org/menpo opencv3```
 
-
+Only on Windows :
+ - Microsoft Visual C++ 14.0 (2015) is required. Get it with "Microsoft Visual C++ Build Tools": https://www.microsoft.com/en-us/download/details.aspx?id=48159
+ - If you have problems with cupy installation with pip, install it with conda command instead : ```conda install cupy```
+ - If you have conflicts between OpenCV and Zict, install OpenCV in the ```defaults``` channel using ```conda install opencv```
+ - On Windows, use ```python -m socr``` instead of ```./launch```
+ 
 ## Compilation
 
 To compile, run : 
