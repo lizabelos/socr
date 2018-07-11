@@ -39,7 +39,7 @@ class Trainer:
 
         self.checkpoint_name = "checkpoints/" + name + ".pth.tar"
         self.csv_name = "checkpoints/" + name + ".csv"
-        self.adaptative_optimizer = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer)
+        self.adaptative_optimizer = model.adaptative_learning_rate(self.optimizer)
         self.epoch = 0
         self.clip_gradient = clip_gradient
         self.start_time = None
@@ -144,7 +144,16 @@ class Trainer:
         """
         self.model.train()
 
+        start_data_time = datetime.now()
+        total_data_time = 0
+        count_data_time = 0
+
         for i, data in enumerate(data_loader, 0):
+
+            end_data_time = datetime.now()
+            total_data_time = total_data_time + (end_data_time - start_data_time).total_seconds()
+            count_data_time = count_data_time + 1
+
             if self.start_time is None:
                 self.start_time = datetime.now()
 
@@ -190,10 +199,12 @@ class Trainer:
                 self.start_time = end_time
                 self.elapsed = self.elapsed + diff.total_seconds()
                 sys.stdout.write(TerminalColors.BOLD + '[%d, %5d] ' % (self.epoch + 1, (i * batch_size) + 1) + TerminalColors.ENDC)
-                sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed / 60))
+                sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; dat: %.4fms; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, total_data_time / count_data_time * 1000, self.elapsed / 60))
+
+            start_data_time = datetime.now()
 
         self.epoch = self.epoch + 1
-        # self.adaptative_optimizer.step(self.moving_average.moving_average())
+        self.adaptative_optimizer.step()
 
         epoch_s = str(self.epoch)
         elapsed_s = str(self.elapsed).replace(".", ",")

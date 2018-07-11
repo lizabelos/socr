@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import shutil
 import sys
@@ -40,8 +41,6 @@ class LineLocalizator:
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=0.000001)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
-
-        self.maximum_height = 1024
 
         # Parse and load all the test datasets specified into datasets.cfg
         load_default_datasets_cfg_if_not_exist()
@@ -126,12 +125,13 @@ class LineLocalizator:
         :param image_path: The path of the image
         """
         image = Image.open(image_path).convert('RGB')
-        width, height = image.size
 
-        if height > self.maximum_height:
-            resized = image.resize((width * self.maximum_height // height, self.maximum_height), Image.ANTIALIAS)
-        else:
-            resized = image
+        width, height = image.size
+        new_width = math.sqrt(6 * (10 ** 5) * width / height)
+        new_width = int(new_width)
+        new_height = height * new_width // width
+
+        resized = image.resize((new_width, new_height), Image.ANTIALIAS)
 
         image = torch.from_numpy(image_pillow_to_numpy(image))
         resized = torch.from_numpy(image_pillow_to_numpy(resized))
@@ -208,7 +208,7 @@ class LineLocalizator:
         if not os.path.exists("results"):
             os.makedirs("results")
 
-        data_set = FileDataset(self.maximum_height)
+        data_set = FileDataset()
         data_set.recursive_list(path)
         data_set.sort()
 

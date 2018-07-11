@@ -90,13 +90,13 @@ class PSPUpsample(nn.Module):
         super().__init__()
         if bn:
             self.conv = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, 3, padding=1),
+                nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
                 nn.BatchNorm2d(out_channels),
                 nn.PReLU()
             )
         else:
             self.conv = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, 3, padding=1),
+                nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
                 nn.PReLU()
             )
 

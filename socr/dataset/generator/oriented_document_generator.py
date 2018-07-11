@@ -1,5 +1,6 @@
+import math
 from math import cos, sin
-from random import randint
+from random import randint, uniform
 
 from PIL import ImageDraw, Image
 
@@ -59,6 +60,15 @@ class OrientedDocumentGenerator(Generator):
     def generate(self, index):
         width = randint(200, 400)
         height = randint(500, 700)
+
+        new_width = math.sqrt(6 * (10 ** 5) * width / height)
+        new_width = new_width * uniform(0.8, 1.2)
+        new_width = int(new_width)
+        new_height = height * new_width // width
+
+        width = new_width
+        height = new_height
+
         y = 0
 
         image = self.helper.get_random_background(width, height)

@@ -29,11 +29,18 @@ class dhSegment(ConvolutionalModel):
         self.up3 = PSPUpsample(256 + 64, 128, bn=True)
         self.up4 = PSPUpsample(128 + 3, 64, bn=True)
 
+        print_normal("Applying xavier initialization...")
+        self.apply(self.weights_init)
+
         print_normal("Downloading pretrained model from pytorch model zoo...")
         pretrained_model = model_zoo.load_url("https://download.pytorch.org/models/resnet18-5c106cde.pth")
 
         print_normal("Loading pretrained resnet...")
         self.load_my_state_dict(pretrained_model)
+
+    def weights_init(self, m):
+        if isinstance(m, torch.nn.Conv2d):
+            torch.nn.init.xavier_uniform_(m.weight.data)
 
     def load_my_state_dict(self, state_dict):
 
@@ -89,3 +96,6 @@ class dhSegment(ConvolutionalModel):
 
     def create_loss(self):
         return XHeightCCLoss()
+
+    def adaptative_learning_rate(self, optimizer):
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)

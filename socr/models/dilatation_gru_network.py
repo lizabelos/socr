@@ -86,3 +86,6 @@ class DilatationGruNetwork(ConvolutionalModel):
 
     def create_loss(self):
         return CTCTextLoss(self.labels)
+
+    def adaptative_learning_rate(self, optimizer):
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)

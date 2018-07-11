@@ -1,3 +1,4 @@
+from datetime import datetime
 import math
 import os
 from random import randint, random, uniform
@@ -141,19 +142,25 @@ class ICDARDocumentSet(Dataset):
 
     def __getitem__(self, index):
         image_path, regions = self.labels[index % len(self.labels)]
-        try:
+
+        if os.path.isfile(image_path + ".resized.jpg"):
+            image = Image.open(image_path + ".resized.jpg").convert('RGB')
+            image_size = np.load(image_path + ".size.np.npy")
+            width = image_size[0]
+            height = image_size[1]
+            new_width, new_height = image.size
+        else:
             image = Image.open(image_path).convert('RGB')
-        except:
-            print("Warning : can't open :" + image_path)
-            return self.__getitem__(randint(0, self.__len__() - 1))
+            width, height = image.size
+            new_width = math.sqrt(6 * (10 ** 5) * width / height)
+            # new_width = new_width * uniform(0.8, 1.2)
+            new_width = int(new_width)
+            new_height = height * new_width // width
+            image = image.resize((new_width, new_height), Image.ANTIALIAS)
+            image.save(image_path + ".resized.jpg")
+            np.save(image_path + ".size.np.npy", np.array([width, height]))
 
-        width, height = image.size
-        new_width = math.sqrt(6 * (10 ** 5) * width / height)
-        new_width = new_width * uniform(0.8, 1.2)
-        new_width = int(new_width)
-        new_height = height * new_width // width
 
-        image = image.resize((new_width, new_height), Image.ANTIALIAS)
 
         new_regions = []
         for region in regions:
@@ -170,8 +177,8 @@ class ICDARDocumentSet(Dataset):
         # else:
         #     label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
         #     np.save(image_path + ".npy", label)
-        label = self.loss.document_to_ytrue([new_width, new_height], new_regions)
 
+        label = self.loss.document_to_ytrue([new_width, new_height], new_regions)
 
         image = image_pillow_to_numpy(image)
 
@@ -192,4 +199,4 @@ class ICDARDocumentSet(Dataset):
         return torch.from_numpy(image), torch.from_numpy(label)
 
     def __len__(self):
-        return len(self.labels) * 128
+        return len(self.labels) * 32
