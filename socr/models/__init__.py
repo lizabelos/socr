@@ -1,6 +1,6 @@
 import torch
 
-from .dilatation_gru_network import DilatationGruNetwork
+from .resSru import resSru
 from .bigger_conv_lstm_network import BiggerConvLSTMNetwork
 from .ocropy_line_network import OcropyLineNetwork
 from .conv_lstm_network import ConvLSTMNetwork
@@ -15,7 +15,7 @@ def get_model_by_name(name):
         "BiggerConvLSTMNetwork": BiggerConvLSTMNetwork,
         "OcropyLineNetwork": OcropyLineNetwork,
         "XHeightLabelingModel": XHeightLabelingModel,
-        "DilatationGruNetwork": DilatationGruNetwork,
+        "resSru": resSru,
         "XHeightResnetModel": XHeightResnetModel,
         "dhSegment": dhSegment
     }[name]

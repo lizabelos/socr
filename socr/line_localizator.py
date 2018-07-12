@@ -2,6 +2,7 @@ import argparse
 import math
 import os
 import shutil
+import subprocess
 import sys
 from random import randint
 
@@ -60,7 +61,7 @@ class LineLocalizator:
 
         train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True, testing=False, args={"loss": self.loss, "transform":True})
         print_normal("Train database length : " + str(train_database.__len__()))
-        self.trainer.train(train_database, batch_size=batch_size)
+        self.trainer.train(train_database, batch_size=batch_size, callback=self.callback)
 
     def set_lr(self, lr):
         """
@@ -220,7 +221,7 @@ class LineLocalizator:
             resized, image, path = data
 
             percent = i * 100 // data_set.__len__()
-            print_normal(str(percent) + "%... Processing " + path[0])
+            sys.stdout.write(str(percent) + "%... Processing \r")
 
             lines, positions = self.extract(image, resized, with_images=False)
 
@@ -238,6 +239,13 @@ class LineLocalizator:
                 print_warning("Can't find : '" + xml_path + "'")
 
             count = count + 1
+
+    def callback(self):
+        self.eval()
+        # TODO : Remove hard coded path
+        subprocess.run(['rm', '-R', 'results'])
+        self.evaluate("/space_sde/tbelos/dataset/icdar/2017-baseline/validation-complex")
+        subprocess.run(['sh','evaluate.sh'])
 
 
 def main(sysarg):

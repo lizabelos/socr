@@ -98,4 +98,4 @@ class dhSegment(ConvolutionalModel):
         return XHeightCCLoss()
 
     def adaptative_learning_rate(self, optimizer):
-        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.95)
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)

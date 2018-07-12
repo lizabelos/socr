@@ -10,7 +10,7 @@ from socr.utils.logging.logger import print_warning
 
 def build_wrapctc(no_confirm = False):
     if not no_confirm:
-        print("You need wrapctc library to continue. Do you want to install it ? [yes/no]")
+        print("You need wrapctc library by Thomas Viehmann to continue. Do you want to install it ? [yes/no]")
         response = input()
     else:
         response = "yes"

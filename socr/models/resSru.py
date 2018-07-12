@@ -3,7 +3,7 @@ from collections import OrderedDict
 import torch
 
 from socr.nn import IndRNN
-from socr.nn.modules.resnet import ResNet, Bottleneck
+from socr.nn.modules.resnet import ResNet, Bottleneck, BasicBlock
 from socr.utils.setup.build import install_and_import_sru
 
 sru = install_and_import_sru()
@@ -12,7 +12,7 @@ from socr.models.convolutional_model import ConvolutionalModel
 from socr.models.loss import CTCTextLoss
 
 
-class DilatationGruNetwork(ConvolutionalModel):
+class resSru(ConvolutionalModel):
 
     def __init__(self, labels):
         super().__init__()
@@ -26,39 +26,20 @@ class DilatationGruNetwork(ConvolutionalModel):
             ('conv1', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
             ('bn1', torch.nn.BatchNorm2d(64)),
             ('activation', torch.nn.ReLU(inplace=True)),
-            ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-            ('resnet', ResNet(Bottleneck, [3, 4, 6, 3], strides=[1, (2, 1), (2, 1), (2, 1)], bn=True)),
-
-            # ('conv1-1', torch.nn.Conv2d(3, 64, kernel_size=3)),
-            # ('activation1-1', self.activation),
-            # ('conv1-2', torch.nn.Conv2d(64, 64, kernel_size=3)),
-            # ('activation1-2', self.activation),
-            # ('maxpool1', torch.nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))),
-            #
-            # ('conv2-1', torch.nn.Conv2d(64, 128, kernel_size=3)),
-            # ('activation2-1', self.activation),
-            # ('conv2-2', torch.nn.Conv2d(128, 128, kernel_size=3)),
-            # ('activation2-2', self.activation),
-            # ('maxpool2', torch.nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))),
-            #
-            # ('conv3-1', torch.nn.Conv2d(128, 256, kernel_size=3)),
-            # ('activation3-1', self.activation),
-            # ('conv3-2', torch.nn.Conv2d(256, 256, kernel_size=3)),
-            # ('activation3-2', self.activation),
-            # ('conv3-3', torch.nn.Conv2d(256, 256, kernel_size=3)),
-            # ('activation3-3', self.activation),
-            # ('maxpool3', torch.nn.MaxPool2d(kernel_size=(3, 1), stride=(3, 1)))
+            ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=(2, 1), padding=(1, 0))),
+            ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], strides=[1, (2, 1), (2, 1), (2, 1)], bn=True)),
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, n_layer=3,
-                          bidirectional=True, batch_norm=True)
+        # torch.nn.LSTM(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
+        # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
 
-        # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
-        #                    bidirectional=True, rnn_dropout=0.4, use_tanh=1, use_relu=0, layer_norm=False,
-        #                    weight_norm=True)
+        # print(self.convolutions_output_size)
 
-        self.fc = torch.nn.Linear(256 * 2, self.output_numbers)
+        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
+                           bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
+
+        self.fc = torch.nn.Linear(2 * 256, self.output_numbers)
 
     def forward_cnn(self, x):
         return self.convolutions(x)
@@ -94,7 +75,8 @@ class DilatationGruNetwork(ConvolutionalModel):
         return CTCTextLoss(self.labels)
 
     def adaptative_learning_rate(self, optimizer):
-        return torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.1)
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)
+        # return torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.1)
 
     def collate(self, batch):
         data = [item[0] for item in batch]  # just form a list of tensor

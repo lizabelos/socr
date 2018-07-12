@@ -20,7 +20,7 @@ class CTCTextLoss(Loss):
 
         self.labels = labels
         self.labels_len = len(self.labels) + 1
-        self.loss = warpctc.CTCLoss(size_average=False, length_average=False).cuda()
+        self.loss = warpctc.CTCLoss(size_average=True, length_average=True).cuda()
 
     def forward(self, inputs, truth):
         labels, labels_length = truth

@@ -149,15 +149,8 @@ class Trainer:
         """
         self.model.train()
 
-        start_data_time = datetime.now()
-        total_data_time = 0
-        count_data_time = 0
 
         for i, data in enumerate(data_loader, 0):
-
-            end_data_time = datetime.now()
-            total_data_time = total_data_time + (end_data_time - start_data_time).total_seconds()
-            count_data_time = count_data_time + 1
 
             if self.start_time is None:
                 self.start_time = datetime.now()
@@ -198,15 +191,13 @@ class Trainer:
             loss_value_np = float(loss_value.data.cpu().numpy())
             self.moving_average.addn(loss_value_np)
 
-            if (i * batch_size) % 16 == 0:
+            if (i * batch_size) % 8 == 0:
                 end_time = datetime.now()
                 diff = end_time - self.start_time
                 self.start_time = end_time
                 self.elapsed = self.elapsed + diff.total_seconds()
                 sys.stdout.write(TerminalColors.BOLD + '[%d, %5d] ' % (self.epoch + 1, (i * batch_size) + 1) + TerminalColors.ENDC)
-                sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; dat: %.4fms; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, total_data_time / count_data_time * 1000, self.elapsed / 60))
-
-            start_data_time = datetime.now()
+                sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed / 60))
 
         self.epoch = self.epoch + 1
         self.adaptative_optimizer.step()

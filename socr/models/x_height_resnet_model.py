@@ -18,13 +18,15 @@ class XHeightResnetModel(ConvolutionalModel):
 
         self.convolutions = torch.nn.Sequential(OrderedDict([
             ('first', torch.nn.Conv2d(3, 64, kernel_size=7, padding=3, bias=False)),
-            ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], bn=False)),
-            # ('pspmodule', PSPModule(512, 512)),
-            ('up1', PSPUpsample(512, 256, bn=False)),
+            ('bn1', torch.nn.BatchNorm2d(64)),
+            ('activation', torch.nn.ReLU(inplace=True)),
+            ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], bn=True)),
+            ('pspmodule', PSPModule(512, 512)),
+            ('up1', PSPUpsample(512, 256, bn=True)),
             ('drop1', torch.nn.Dropout2d(p=0.1)),
-            ('up2', PSPUpsample(256, 64, bn=False)),
+            ('up2', PSPUpsample(256, 64, bn=True)),
             ('drop2', torch.nn.Dropout2d(p=0.1)),
-            ('up3', PSPUpsample(64, 64, bn=False)),
+            ('up3', PSPUpsample(64, 64, bn=True)),
             ('drop3', torch.nn.Dropout2d(p=0.1)),
             ('final', torch.nn.Conv2d(64, 2, kernel_size=1)),
         ]))
@@ -48,3 +50,6 @@ class XHeightResnetModel(ConvolutionalModel):
 
     def create_loss(self):
         return XHeightCCLoss()
+
+    def adaptative_learning_rate(self, optimizer):
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)

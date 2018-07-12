@@ -36,11 +36,19 @@ class InstallRequirements(distutils.cmd.Command):
             [sys.executable, '-m', 'conda', 'install', '-y', 'pytorch=0.4', '-c', 'pytorch'])
         assert res.returncode == 0, "Error"
 
+        res = subprocess.run(
+            [sys.executable, '-m', 'conda', 'install', '-y', 'cupy'])
+        assert res.returncode == 0, "Error"
+
+        res = subprocess.run(
+            [sys.executable, '-m', 'conda', 'install', '-y', 'opencv'])
+        assert res.returncode == 0, "Error"
+
         res = subprocess.run([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
         assert res.returncode == 0, "Error"
 
-        res = subprocess.run([sys.executable, '-m', 'conda', 'install', '-y', '--channel', 'https://conda.anaconda.org/menpo', 'opencv3'])
-        assert res.returncode == 0, "Error"
+        # res = subprocess.run([sys.executable, '-m', 'conda', 'install', '-y', '--channel', 'https://conda.anaconda.org/menpo', 'opencv3'])
+        # assert res.returncode == 0, "Error"
 
         from socr.utils.setup.build import build_sru, build_wrapctc
 		

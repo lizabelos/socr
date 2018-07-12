@@ -2,34 +2,23 @@
 
 ## About
 
-Structured OCR is a line localization and text extraction tools using Deep Learning with PyTorch.
+Structured OCR is a line localization and text recognition tools using Deep Learning with PyTorch.
 
-## Requirements
+## Setting up
 
-**INFORMATION** : You can use ```python3 setup.py install_requirements``` to install all the requirements in one time !
+### Requirements
 
- - A Linux or a Mac computer with CUDA 8 minimum
- - Python 3 with Anaconda
- - PyTorch 0.4 : ```conda install pytorch -c pytorch```
- - GCC/G++ version 5 (even if it's not your default compiler)
- - All the package specified in the ```requirements.txt``` file. You can install all the package by using : ```pip install -r requirements.txt```
- - OpenCV 3 for Python. You can install it using ```conda install --channel https://conda.anaconda.org/menpo opencv3```
+ - NVIDIA Graphic Card with CUDA 8 minimum
+ - Python 3 with Anaconda and Pip
+ - GCC and G++ Version 5 (even if it's not your default compiler)
 
 Only on Windows :
  - Microsoft Visual C++ 14.0 (2015) is required. Get it with "Microsoft Visual C++ Build Tools": https://www.microsoft.com/en-us/download/details.aspx?id=48159
- - If you have problems with cupy installation with pip, install it with conda command instead : ```conda install cupy```
- - If you have conflicts between OpenCV and Zict, install OpenCV in the ```defaults``` channel using ```conda install opencv```
- - On Windows, use ```python -m socr``` instead of ```./launch```
- 
-## Compilation
 
-To compile, run : 
+### Compilation
 
-```
-python3 setup.py build_ext --inplace
-```
-
-The first run of the program will download resources, and install ctc wrapper and sru.
+Use ```python3 setup.py install_requirements``` to install all the necessary requirements.
+Then, to compile, run ```python3 setup.py build_ext --inplace```.
 
 ## How to recognize a page of text ?
 
