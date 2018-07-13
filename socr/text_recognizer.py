@@ -11,6 +11,7 @@ from socr.utils.rating.word_error_rate import levenshtein
 from socr.dataset import parse_datasets_configuration_file
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
+from socr.text_generator import TextGenerator
 from socr.utils.image import show_pytorch_image
 from socr.utils.language.language_model import LanguageModel
 
@@ -62,6 +63,7 @@ class TextRecognizer:
 
         self.corpus = None
         self.lm = None
+        self.text_generator = None
 
     def train(self, batch_size=1, overlr=None):
         """
@@ -77,9 +79,9 @@ class TextRecognizer:
                                                            args={"height": self.model.get_input_image_height(),
                                                                  "labels": self.labels}
                                                            )
-        if not os.path.isfile(self.trainer.checkpoint_name + ".corpus"):
-            with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
-                corpus.write(train_database.get_corpus())
+        # if not os.path.isfile(self.trainer.checkpoint_name + ".corpus"):
+        #     with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
+        #         corpus.write(train_database.get_corpus())
 
         self.trainer.train(train_database, batch_size=batch_size, callback=lambda: self.trainer_callback())
 
@@ -98,8 +100,10 @@ class TextRecognizer:
         self.model.eval()
 
         if self.lm is None:
-            with open(self.trainer.checkpoint_name + ".corpus", "r") as content_file:
+            with open("resources/corpus/train.txt", "r") as content_file:
                 self.corpus = content_file.read()
+
+            # self.text_generator = TextGenerator()
 
             print_normal("Initializing language model...")
             self.lm = LanguageModel(self.corpus, self.labels, self.word_labels)

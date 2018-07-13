@@ -177,9 +177,9 @@ class ICDARDocumentSet(Dataset):
         label = self.loss.document_to_ytrue([new_width, new_height], new_regions)
         image = np.array(image, dtype='float') / 255.0
 
-        # angle = randint(-20, 20)
-        # label = rotate(label, angle)
-        # image = rotate(image, angle)
+        angle = randint(-90, 90)
+        label = rotate(label, angle)
+        image = rotate(image, angle)
 
         # image = np.swapaxes(image, 0, 2)
         # image = np.swapaxes(image, 1, 2)

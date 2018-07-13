@@ -31,7 +31,7 @@ class resSru(ConvolutionalModel):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=3, bidirectional=True, dropout=0.3)
+        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=2, bidirectional=True, dropout=0.3)
         # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
 
         # print(self.convolutions_output_size)

@@ -52,7 +52,7 @@ class CTCTextLoss(Loss):
         return labels, labels_length
 
     def ytrue_to_lines(self, lm, sequence):
-        result = wordBeamSearch(sequence[0].data.cpu().numpy(), 10, lm, False)
+        result = wordBeamSearch(sequence[0].data.cpu().numpy(), 32, lm, False)
         return result
 
     def convert_to_string(self, tokens, vocab, seq_len):
