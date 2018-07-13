@@ -1,5 +1,4 @@
 import numpy as np
-cimport numpy as np
 
 
 cdef class BaselineEncoder:
@@ -16,6 +15,13 @@ cdef class BaselineEncoder:
         y_true[y][x][0] = 1.0
         y_true[y][x][1] = height * self.height_factor
 
+    cdef plot_radius(self, float[:,:,:] y_true, int x, int y, int height):
+        cdef int radius = 5
+        for i in range(-radius, radius):
+            for j in range(-radius, radius):
+                if abs(i) * abs(i) + abs(j) * abs(j) < radius * radius:
+                    self.plot(y_true, x + i, y + j, height)
+
     cdef draw_vertical_line(self, float[:,:,:] y_true, list line):
         cdef int x0 = line[0]
         cdef int y0 = line[1]
@@ -24,7 +30,7 @@ cdef class BaselineEncoder:
         cdef int height = line[4]
 
         for y in range(y0, y1):
-            self.plot(y_true, x0, y, height)
+            self.plot_radius(y_true, x0, y, height)
 
     cdef draw_line(self, float[:,:,:] y_true, list line):
         cdef int x0 = line[0]
@@ -42,7 +48,7 @@ cdef class BaselineEncoder:
         cdef int y = y0
 
         for x in range(x0, x1):
-            self.plot(y_true, x, y, height)
+            self.plot_radius(y_true, x, y, height)
             error = error + deltaerr
             while error >= 0.5:
                 sign = -1 if deltay < 0 else 1

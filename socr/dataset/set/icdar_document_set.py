@@ -9,10 +9,12 @@ from os.path import isfile, join
 
 from PIL import Image
 from lxml import etree
+from scipy.ndimage import rotate
 from torch.utils.data.dataset import Dataset
 
 from socr.dataset.generator.document_generator import DocumentGenerator
 from socr.utils.image import image_pillow_to_numpy
+from socr.utils.image.degrade import gauss_distort
 
 
 class ICDARDocumentSet(Dataset):
@@ -172,28 +174,25 @@ class ICDARDocumentSet(Dataset):
             h = h * new_height // height
             new_regions.append([x0, y0, x1, y1, h])
 
-        # if os.path.isfile(image_path + ".npy"):
-        #     label = np.load(image_path + ".npy")
-        # else:
-        #     label = self.loss.document_to_ytrue([width * new_height // height, new_height], new_regions)
-        #     np.save(image_path + ".npy", label)
-
         label = self.loss.document_to_ytrue([new_width, new_height], new_regions)
+        image = np.array(image, dtype='float') / 255.0
 
-        image = image_pillow_to_numpy(image)
+        # angle = randint(-20, 20)
+        # label = rotate(label, angle)
+        # image = rotate(image, angle)
 
-        if self.transform:
-            # Make the crop
-            crop_width = 300
-            crop_height = 300
-            crop_x = randint(0, image.shape[2] - crop_width)
-            crop_y = randint(0, image.shape[1] - crop_height)
+        # image = np.swapaxes(image, 0, 2)
+        # image = np.swapaxes(image, 1, 2)
 
-            label = label[crop_y:crop_y + crop_height, crop_x:crop_x + crop_width]
-            image = np.stack([image[i][crop_y:crop_y + crop_height, crop_x:crop_x + crop_width] for i in range(0, 3)],
-                             axis=0)
+        # label = np.swapaxes(label, 0, 2)
+        # label = np.swapaxes(label, 1, 2)
 
-            image = self.helper.augment(image, distort=False)
+        # if self.transform:
+        #     image = self.helper.augment(image, distort=False)
+
+            # c = gauss_distort([image[0], image[1], image[2], label[0], label[1]])
+            # image = np.stack((c[0], c[1], c[2]), axis=0)
+            # label = np.stack((c[3], c[4]), axis=0)
 
 
         return torch.from_numpy(image), torch.from_numpy(label)

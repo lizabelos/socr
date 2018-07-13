@@ -1,4 +1,5 @@
 import copy
+from random import randint
 
 import torch
 import torch.utils.model_zoo as model_zoo
@@ -18,16 +19,21 @@ class dhSegment(ConvolutionalModel):
         self.inplanes = 64
 
         self.conv1 = torch.nn.Conv2d(3, 64, kernel_size=7, padding=3, stride=2, bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(64)
+        self.act1 = torch.nn.ReLU(inplace=True)
 
         self.layer1 = self._make_layer(BasicBlock, 64, 2, stride=1)
         self.layer2 = self._make_layer(BasicBlock, 128, 2, stride=2)
         self.layer3 = self._make_layer(BasicBlock, 256, 2, stride=2)
-        self.layer4 = self._make_layer(BasicBlock, 512, 2, stride=2)
+        # self.layer4 = self._make_layer(BasicBlock, 512, 2, stride=2)
 
-        self.up1 = PSPUpsample(512 + 256, 512, bn=True)
-        self.up2 = PSPUpsample(512 + 128, 256, bn=True)
+        # self.up1 = PSPUpsample(512 + 256, 512, bn=True)
+        self.up2 = PSPUpsample(256 + 128, 256, bn=True)
         self.up3 = PSPUpsample(256 + 64, 128, bn=True)
         self.up4 = PSPUpsample(128 + 3, 64, bn=True)
+
+        self.last_conv_prob =  torch.nn.Conv2d(64, 2, kernel_size=(1, 1), dilation=(1, 1), padding=0)
+        self.last_act_prob = torch.nn.ReLU(inplace=True)
 
         print_normal("Applying xavier initialization...")
         self.apply(self.weights_init)
@@ -72,18 +78,22 @@ class dhSegment(ConvolutionalModel):
         # x_0 = S
 
         x_2 = self.conv1(x_1)  # S / 2
+        x_2 = self.bn1(x_2)
+        x_2 = self.act1(x_2)
 
         x_3 = self.layer1(x_2)
         x_3 = self.layer2(x_3)
         x_4 = self.layer3(x_3)
-        x_5 = self.layer4(x_4)
+        # x_5 = self.layer4(x_4)
 
-        x_4 = self.up1(x_5, addition=x_4)
+        # x_4 = self.up1(x_5, addition=x_4)
         x_3 = self.up2(x_4, addition=x_3)
         x_2 = self.up3(x_3, addition=x_2)
         x_1 = self.up4(x_2, addition=x_1)
 
-        return x_1
+        x_prob = self.last_conv_prob(x_1)
+        x_prob = self.last_act_prob(x_prob)
+        return x_prob
 
     def forward_fc(self, x):
         return x
@@ -99,3 +109,53 @@ class dhSegment(ConvolutionalModel):
 
     def adaptative_learning_rate(self, optimizer):
         return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)
+
+    def collate(self, batch):
+        data = [item[0] for item in batch]  # just form a list of tensor
+        label = [item[1] for item in batch]
+
+        min_width = min([d.size()[1] for d in data])
+        min_height = min([d.size()[0] for d in data])
+
+        min_width = min(min_width, 512)
+        min_height = min(min_height, 512)
+
+        new_data = []
+        new_label = []
+
+        for i in range(0, len(data)):
+
+            d = data[i]
+
+            crop_x = randint(0, d.size()[1] - min_width)
+            crop_y = randint(0, d.size()[0] - min_height)
+            # d = torch.transpose(d, 0, 2)
+            # d = torch.transpose(d, 0, 1)
+            d = d[crop_y:crop_y + min_height, crop_x:crop_x + min_width]
+            d = torch.transpose(d, 0, 2)
+            d = torch.transpose(d, 1, 2)
+            new_data.append(d)
+
+            d = label[i]
+
+            # d = torch.transpose(d, 0, 2)
+            # d = torch.transpose(d, 0, 1)
+            d = d[crop_y:crop_y + min_height, crop_x:crop_x + min_width]
+            d = torch.transpose(d, 0, 2)
+            d = torch.transpose(d, 1, 2)
+            new_label.append(d)
+
+        data = torch.stack(new_data)
+        label = torch.stack(new_label)
+
+
+        # max_width = max([d.size()[2] for d in data])
+        # max_height = max([d.size()[1] for d in data])
+        #
+        # data = [torch.nn.functional.pad(d, (0, max_width - d.size()[2], 0, max_height - d.size()[1])) for d in data]
+        # data = torch.stack(data)
+        #
+        # label = [torch.nn.functional.pad(d, (0, max_width - d.size()[2], 0, max_height - d.size()[1])) for d in label]
+        # label = torch.stack(label)
+
+        return [data, label]

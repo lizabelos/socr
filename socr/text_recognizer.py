@@ -49,7 +49,7 @@ class TextRecognizer:
             self.model = self.model.cuda()
             self.loss = self.loss.cuda()
 
-        self.optimizer = get_optimizer_by_name(optimizer_name)(self.model.parameters(), lr=lr, weight_decay=0.0001)
+        self.optimizer = get_optimizer_by_name(optimizer_name)(self.model.parameters(), lr=lr)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
         load_default_datasets_cfg_if_not_exist()

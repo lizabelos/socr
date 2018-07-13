@@ -65,6 +65,7 @@ class Trainer:
         self.checkpoint_userdata = checkpoint['userdata']
         self.model.load_state_dict(checkpoint['state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.adaptative_optimizer.load_state_dict(checkpoint['adaptative_optimizer'])
         self.elapsed = checkpoint['elapsed']
         return self.checkpoint_userdata
 
@@ -77,7 +78,8 @@ class Trainer:
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'userdata': self.checkpoint_userdata,
-            'elapsed': self.elapsed
+            'elapsed': self.elapsed,
+            'adaptative_optimizer': self.adaptative_optimizer.state_dict(),
         }
         torch.save(checkpoint, self.checkpoint_name)
 
@@ -91,7 +93,8 @@ class Trainer:
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'userdata': self.checkpoint_userdata,
-            'elapsed': self.elapsed
+            'elapsed': self.elapsed,
+            'adaptative_optimizer': self.adaptative_optimizer.state_dict(),
          }
         torch.save(checkpoint, self.checkpoint_name + ".autosave")
 

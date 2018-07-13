@@ -61,3 +61,6 @@ class XHeightLabelingModel(ConvolutionalModel):
 
     def create_loss(self):
         return XHeightCCLoss()
+
+    def adaptative_learning_rate(self, optimizer):
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)
