@@ -128,7 +128,14 @@ class TextGenerator:
                 hidden = self.repackage_hidden(hidden)
         return total_loss / len(data_source)
 
-    def getBigramProb(self, w1, w2):
+    def get_ngram_prob(self, words):
+        # todo
+        pass
+
+    def in_dictionnary(self, word):
+        pass
+
+    def get_bigram_prob(self, w1, w2):
         self.model.eval()
 
         try:

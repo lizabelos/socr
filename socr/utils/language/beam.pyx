@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 from __future__ import division
-import copy
 
 from .language_model cimport LanguageModel
 
@@ -25,6 +24,14 @@ cdef class Textual:
         self.wordDev = ''  # developing word
         self.prUnnormalized = 1.0
         self.prTotal = 1.0
+
+    cdef copy(self):
+        cdef Textual textual = Textual()
+        textual.text = self.text
+        textual.wordHist = self.wordHist.copy()
+        textual.wordDev = self.wordDev
+        textual.prUnnormalized = self.prUnnormalized
+        textual.prTotal = self.prTotal
 
 
 cdef class Beam:
@@ -69,7 +76,7 @@ cdef class Beam:
         beam = Beam(self.lm, self.useNGrams)
 
         # copy textual information
-        beam.textual = copy.deepcopy(self.textual)
+        beam.textual = self.textual.copy()
         beam.textual.text += newChar
 
         # do textual calculations only if beam gets extended
@@ -79,39 +86,13 @@ cdef class Beam:
                 # if new char occurs inside a word
                 if newChar in beam.lm.getWordChars():
                     beam.textual.wordDev += newChar
-                    nextWords = beam.lm.getNextWords(beam.textual.wordDev)
-
-                    # no complete word in text, then use unigram of all possible next words
-                    numWords = len(beam.textual.wordHist)
-                    prSum = 0
-                    if numWords == 0:
-                        for w in nextWords:
-                            prSum += beam.lm.getUnigramProb(w)
-                    # take last complete word and sum up bigrams of all possible next words
-                    else:
-                        lastWord = beam.textual.wordHist[-1]
-                        for w in nextWords:
-                            prSum += beam.lm.getBigramProb(lastWord, w)
-                    beam.textual.prTotal = beam.textual.prUnnormalized * prSum
-                    beam.textual.prTotal = beam.textual.prTotal ** (
-                                1 / (numWords + 1)) if numWords >= 1 else beam.textual.prTotal
-
                 # if new char does not occur inside a word
                 else:
                     # if current word is not empty, add it to history
                     if beam.textual.wordDev != '':
                         beam.textual.wordHist.append(beam.textual.wordDev)
                         beam.textual.wordDev = ''
-
-                        # score with unigram (first word) or bigram (all other words) probability
-                        numWords = len(beam.textual.wordHist)
-                        if numWords == 1:
-                            beam.textual.prUnnormalized *= beam.lm.getUnigramProb(beam.textual.wordHist[-1])
-                            beam.textual.prTotal = beam.textual.prUnnormalized
-                        elif numWords >= 2:
-                            beam.textual.prUnnormalized *= beam.lm.getBigramProb(beam.textual.wordHist[-2],
-                                                                                 beam.textual.wordHist[-1])
-                            beam.textual.prTotal = beam.textual.prUnnormalized ** (1 / numWords)
+                        beam.processNGram()
 
             else:  # don't use unigrams and bigrams, just keep wordDev up to date
                 if newChar in beam.lm.getWordChars():
@@ -124,9 +105,17 @@ cdef class Beam:
         beam.optical.prNonBlank = prNonBlank
         return beam
 
+    cdef processNGram(self):
+        # score with n-grams with n > 1
+        numWords = len(self.textual.wordHist)
+        if numWords >= 2:
+            # todo : test the last word in dictionnary
+            # todo : then calculate n gram
+            self.textual.prUnnormalized *= self.lm.getBigramProb(self.textual.wordHist[-2], self.textual.wordHist[-1])
+            self.textual.prTotal = self.textual.prUnnormalized ** (1 / numWords)
+
     def __str__(self):
-        return '"' + self.getText() + '"' + ';' + str(self.getPrTotal()) + ';' + str(self.getPrTextual()) + ';' + str(
-            self.textual.prUnnormalized)
+        return '"' + self.getText() + '"' + ';' + str(self.getPrTotal()) + ';' + str(self.getPrTextual()) + ';' + str(self.textual.prUnnormalized)
 
 
 cdef class BeamList:
