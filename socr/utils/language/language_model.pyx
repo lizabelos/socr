@@ -7,12 +7,16 @@ from __future__ import division
 import re
 from .prefix_tree cimport PrefixTree
 
+from socr.text_generator import TextGenerator
+
 
 cdef class LanguageModel:
     "unigram/bigram LM, add-k smoothing"
 
     def __init__(self, corpus, chars, wordChars):
         "read text from filename, specify chars which are contained in dataset, specify chars which form words"
+        self.nnGram = TextGenerator()
+
         # read from file
         self.wordCharPattern = '[' + wordChars + ']'
         self.wordPattern = self.wordCharPattern + '+'
@@ -23,52 +27,29 @@ cdef class LanguageModel:
         self.smoothing = True
         self.addK = 1.0 if self.smoothing else 0.0
 
-        # create unigrams
-        self.unigrams = {}
-        for w in words:
-            w = w.lower()
-            if w not in self.unigrams:
-                self.unigrams[w] = 0
-            self.unigrams[w] += 1 / self.numWords
-
-        # create unnormalized bigrams
-        bigrams = {}
-        for i in range(len(words) - 1):
-            w1 = words[i].lower()
-            w2 = words[i + 1].lower()
-            if w1 not in bigrams:
-                bigrams[w1] = {}
-            if w2 not in bigrams[w1]:
-                bigrams[w1][w2] = self.addK  # add-K
-            bigrams[w1][w2] += 1
-
-        # normalize bigrams
-        for w1 in bigrams.keys():
-            # sum up
-            probSum = self.numUniqueWords * self.addK  # add-K smoothing
-            for w2 in bigrams[w1].keys():
-                probSum += bigrams[w1][w2]
-            # and divide
-            for w2 in bigrams[w1].keys():
-                bigrams[w1][w2] /= probSum
-        self.bigrams = bigrams
-
         # create prefix tree
         self.tree = PrefixTree()  # create empty tree
         self.tree.addWords(words)  # add all unique words to tree
+        self.tree.addWords([w.title() for w in words])
+        self.tree.addWords([w.upper() for w in words])
 
         # list of all chars, word chars and nonword chars
         self.allChars = chars
         self.wordChars = wordChars
         self.nonWordChars = str().join(set(chars) - set(re.findall(self.wordCharPattern, chars)))  # else calculate those chars
 
+        self.lastW1 = None
+        self.lastW2 = None
+        self.lastProb = None
+
     cdef getNextWords(self, text):
         "text must be prefix of a word"
-        return self.tree.getNextWords(text)
+        return self.tree.getNextWords(text.lower())
 
     cdef getNextChars(self, text):
         "text must be prefix of a word"
-        nextChars = str().join(self.tree.getNextChars(text))
+        nextChars = str().join(self.tree.getNextChars(text.lower()))
+        # nextChars += nextChars.upper()
 
         # if in between two words or if word ends, add non-word chars
         if (text == '') or (self.isWord(text)):
@@ -91,22 +72,14 @@ cdef class LanguageModel:
     cdef isWord(self, text):
         return self.tree.isWord(text)
 
-    cdef getUnigramProb(self, w):
-        "prob of seeing word w."
-        w = w.lower()
-        val = self.unigrams.get(w)
-        if val != None:
-            return val
-        return 0
+    cdef getNN(self):
+        return self.nnGram
 
     cdef getBigramProb(self, w1, w2):
         "prob of seeing words w1 w2 next to each other."
-        w1 = w1.lower()
-        w2 = w2.lower()
-        val1 = self.bigrams.get(w1)
-        if val1 != None:
-            val2 = val1.get(w2)
-            if val2 != None:
-                return val2
-            return self.addK / (self.getUnigramProb(w1) * self.numUniqueWords + self.numUniqueWords)
-        return 0
+        if w1 == self.lastW1 and w2 == self.lastW2:
+            return self.lastProb
+        self.lastW1 = w1
+        self.lastW2 = w2
+        self.lastProb = self.nnGram.get_bigram_prob(w1,w2)
+        return self.lastProb

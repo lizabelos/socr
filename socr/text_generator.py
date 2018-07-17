@@ -38,7 +38,7 @@ class TextGenerator:
 
     def train(self):
         try:
-            for epoch in range(1, 50):
+            for epoch in range(1, 100):
                 epoch_start_time = time.time()
                 self.one_epoch(epoch)
                 val_loss = self.evaluate(self.val_data)
@@ -128,9 +128,24 @@ class TextGenerator:
                 hidden = self.repackage_hidden(hidden)
         return total_loss / len(data_source)
 
-    def get_ngram_prob(self, words):
-        # todo
-        pass
+    def get_ngram_prob(self, words, last_word):
+        self.model.eval()
+
+        words = [w.lower() for w in words]
+        words = [self.corpus.dictionary.word_to_id(w) for w in words]
+        words = torch.autograd.Variable(torch.LongTensor(words), requires_grad=False).cuda().unsqueeze(0)
+
+        last_word = last_word.lower()
+        last_word = self.corpus.dictionary.word_to_id(last_word)
+
+        output, hidden = self.model(words)
+
+        output = torch.nn.functional.softmax(output, dim=2)
+
+        word_weights = output.cpu().exp().detach().numpy()
+        result = word_weights[0][len(words) - 1][last_word]
+
+        return result
 
     def in_dictionnary(self, word):
         pass
@@ -138,11 +153,11 @@ class TextGenerator:
     def get_bigram_prob(self, w1, w2):
         self.model.eval()
 
-        try:
-            id1 = self.corpus.dictionary.word2idx[w1]
-            id2 = self.corpus.dictionary.word2idx[w2]
-        except:
-            return 0
+        w1 = w1.lower()
+        w2 = w2.lower()
+
+        id1 = self.corpus.dictionary.word_to_id(w1)
+        id2 = self.corpus.dictionary.word_to_id(w2)
 
         input = torch.randint(len(self.corpus.dictionary), (1, 1), dtype=torch.long).cuda()
         input.fill_(id1)
@@ -150,8 +165,13 @@ class TextGenerator:
         # output, hidden = self.model(input, hidden)
         output, hidden = self.model(input)
 
-        word_weights = output.squeeze().exp().cpu()
-        return word_weights[id2].item()
+        word_weights = output.cpu().detach().numpy()
+        result = word_weights[0][0][id2]
+
+        if result < 0:
+            result = 0
+
+        return result
 
 
 def main(sysarg):

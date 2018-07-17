@@ -14,12 +14,15 @@ cdef class Textual:
     cdef float prUnnormalized
     cdef float prTotal
 
+    cdef copy(self)
+
 cdef class Beam:
 
     cdef Optical optical
     cdef Textual textual
     cdef LanguageModel lm
     cdef bint useNGrams
+    cdef bint newWord
 
     cpdef mergeBeam(self, Beam beam)
 
@@ -36,6 +39,8 @@ cdef class Beam:
     cdef getNextChars(self)
 
     cdef createChildBeam(self, str newChar, float prBlank, float prNonBlank)
+
+    cdef processNGram(self)
 
 
 cdef class BeamList:

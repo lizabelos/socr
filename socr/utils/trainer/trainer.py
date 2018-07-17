@@ -46,6 +46,7 @@ class Trainer:
         self.start_time = None
         self.elapsed = 0.0
         self.error = None
+        self.best_error = None
 
         if os.path.exists(self.checkpoint_name):
             self.restore()
@@ -67,6 +68,7 @@ class Trainer:
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.adaptative_optimizer.load_state_dict(checkpoint['adaptative_optimizer'])
         self.elapsed = checkpoint['elapsed']
+        self.best_error = checkpoint['best_error']
         return self.checkpoint_userdata
 
     def save(self):
@@ -80,6 +82,7 @@ class Trainer:
             'userdata': self.checkpoint_userdata,
             'elapsed': self.elapsed,
             'adaptative_optimizer': self.adaptative_optimizer.state_dict(),
+            'best_error': self.best_error
         }
         torch.save(checkpoint, self.checkpoint_name)
 
@@ -95,6 +98,7 @@ class Trainer:
             'userdata': self.checkpoint_userdata,
             'elapsed': self.elapsed,
             'adaptative_optimizer': self.adaptative_optimizer.state_dict(),
+            'best_error': self.best_error
          }
         torch.save(checkpoint, self.checkpoint_name + ".autosave")
 
@@ -126,6 +130,11 @@ class Trainer:
                             self.error = callback()
                         except Exception as e:
                             print_error("Callback error : " + str(e))
+                        if self.error is not None:
+                            if self.best_error is None or self.error < self.best_error:
+                                print_normal("Best score ! Saving !")
+                                self.best_error = self.error
+                                self.save()
 
             print_normal("Done training ! Saving...")
             self.save()

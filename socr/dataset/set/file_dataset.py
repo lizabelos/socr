@@ -16,8 +16,9 @@ class FileDataset(Dataset):
 
     def recursive_list(self, path):
         if isfile(path):
-            if not path.endswith(".result.jpg") and path.endswith(".jpg"):
-                self.list.append(path)
+            if not path.endswith(".result.jpg"):
+                if path.endswith(".jpg") or path.endswith(".png"):
+                    self.list.append(path)
         else:
             for file_name in listdir(path):
                 self.recursive_list(join(path, file_name))

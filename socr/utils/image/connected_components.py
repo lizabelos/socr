@@ -8,12 +8,14 @@ def connected_components(image):
     # kernel = np.ones((10, 10), np.uint8)
     # image = cv2.dilate(image, kernel, iterations=1)
 
-    ret, thresh = cv2.threshold(image, 240, 255, cv2.THRESH_BINARY)
+    ret, thresh = cv2.threshold(image, 192, 255, cv2.THRESH_BINARY)
 
-    kernel = np.ones((4, 4), np.uint8)
+    # ret, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    thresh = cv2.erode(thresh, kernel, iterations=1)
-    #thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+    # kernel = np.ones((4, 4), np.uint8)
+    # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+    # thresh = cv2.erode(thresh, kernel, iterations=1)
+    # thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
 
 
     # Marker labelling

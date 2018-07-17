@@ -45,6 +45,8 @@ cdef class BaselineDecoder:
         if len(x_train) == 0:
             return None
 
+        max_height = max_height * 2
+
         cdef float min_x = min(x_train)
         cdef float max_x = max(x_train)
         cdef float line_components_width = max_x - min_x

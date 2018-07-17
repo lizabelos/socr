@@ -16,7 +16,7 @@ cdef class BaselineEncoder:
         y_true[y][x][1] = height * self.height_factor
 
     cdef plot_radius(self, float[:,:,:] y_true, int x, int y, int height):
-        cdef int radius = 5
+        cdef int radius = 3
         for i in range(-radius, radius):
             for j in range(-radius, radius):
                 if abs(i) * abs(i) + abs(j) * abs(j) < radius * radius:

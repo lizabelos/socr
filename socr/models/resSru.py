@@ -27,17 +27,17 @@ class resSru(ConvolutionalModel):
             ('bn1', torch.nn.BatchNorm2d(64)),
             ('activation', torch.nn.ReLU(inplace=True)),
             ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=(1, 0))),
-            ('resnet', ResNet(Bottleneck, [3, 4, 6, 3], strides=[1, (2, 1), (2, 1), (2, 1)], bn=True)),
+            ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], strides=[1, (2, 1), (2, 1), (2, 1)], bn=True)),
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=2, bidirectional=True, dropout=0.3)
+        # self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=2, bidirectional=True, dropout=0.3)
         # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
 
         # print(self.convolutions_output_size)
 
-        # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
-        #                    bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
+        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
+                           bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
         self.fc = torch.nn.Linear(2 * 256, self.output_numbers)
 

@@ -32,6 +32,7 @@ cdef class Textual:
         textual.wordDev = self.wordDev
         textual.prUnnormalized = self.prUnnormalized
         textual.prTotal = self.prTotal
+        return textual
 
 
 cdef class Beam:
@@ -43,6 +44,7 @@ cdef class Beam:
         self.textual = Textual('')
         self.lm = lm
         self.useNGrams = useNGrams
+        self.newWord = False
 
     cpdef mergeBeam(self, Beam beam):
         "merge probabilities of two beams with same text"
@@ -81,24 +83,23 @@ cdef class Beam:
 
         # do textual calculations only if beam gets extended
         if newChar != '':
-            if self.useNGrams:  # use unigrams and bigrams
 
-                # if new char occurs inside a word
-                if newChar in beam.lm.getWordChars():
-                    beam.textual.wordDev += newChar
-                # if new char does not occur inside a word
-                else:
-                    # if current word is not empty, add it to history
-                    if beam.textual.wordDev != '':
-                        beam.textual.wordHist.append(beam.textual.wordDev)
-                        beam.textual.wordDev = ''
-                        beam.processNGram()
-
-            else:  # don't use unigrams and bigrams, just keep wordDev up to date
-                if newChar in beam.lm.getWordChars():
-                    beam.textual.wordDev += newChar
-                else:
+            # if new char occurs inside a word
+            if newChar in beam.lm.getWordChars():
+                beam.textual.wordDev += newChar
+            # if new char does not occur inside a word
+            else:
+                # if current word is not empty, add it to history
+                if beam.textual.wordDev != '':
+                    beam.textual.wordHist.append(beam.textual.wordDev)
                     beam.textual.wordDev = ''
+                    beam.newWord = True
+                    # beam.processNGram()
+
+                if newChar != ' ':
+                    beam.textual.wordHist = []
+
+
 
         # set optical information
         beam.optical.prBlank = prBlank
@@ -107,12 +108,16 @@ cdef class Beam:
 
     cdef processNGram(self):
         # score with n-grams with n > 1
-        numWords = len(self.textual.wordHist)
-        if numWords >= 2:
-            # todo : test the last word in dictionnary
-            # todo : then calculate n gram
-            self.textual.prUnnormalized *= self.lm.getBigramProb(self.textual.wordHist[-2], self.textual.wordHist[-1])
-            self.textual.prTotal = self.textual.prUnnormalized ** (1 / numWords)
+        return
+        if self.newWord:
+            numWords = len(self.textual.wordHist)
+            if numWords >= 2:
+                # todo : test the last word in dictionnary
+                # todo : then calculate n gram
+                bigramProb = self.lm.getNN().get_ngram_prob(self.textual.wordHist[0:len(self.textual.wordHist)-1], self.textual.wordHist[-1])
+                if bigramProb is not None:
+                    self.textual.prUnnormalized *= bigramProb
+                    self.textual.prTotal = self.textual.prUnnormalized ** (1 / numWords)
 
     def __str__(self):
         return '"' + self.getText() + '"' + ';' + str(self.getPrTotal()) + ';' + str(self.getPrTextual()) + ';' + str(self.textual.prUnnormalized)
@@ -138,8 +143,15 @@ cdef class BeamList:
 
     cdef getBestBeams(self, int num):
         "return best beams, specify the max. number of beams to be returned (beam width)"
+        cdef int numNGram = num * 2
         u = [v for (_, v) in self.beams.items()]
         lmWeight = 1
+        u = sorted(u, reverse=True, key=lambda x: self.sortedLambda(x, lmWeight))[:numNGram]
+
+        cdef Beam beam
+        for beam in u:
+            beam.processNGram()
+
         u = sorted(u, reverse=True, key=lambda x: self.sortedLambda(x, lmWeight))[:num]
         return u
 

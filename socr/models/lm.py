@@ -1,9 +1,7 @@
 import torch.nn as nn
 
 from socr.models.model import Model
-from socr.utils.setup.build import install_and_import_sru
-
-sru = install_and_import_sru()
+from socr.nn import IndRNN
 
 
 class LM(Model):
@@ -11,12 +9,11 @@ class LM(Model):
 
     def __init__(self, ntoken):
         super(LM, self).__init__()
-        self.encoder = nn.Embedding(ntoken, 100)
+        self.encoder = nn.Embedding(ntoken, 256)
 
-        self.rnn = sru.SRU(100, 100, num_layers=4, bidirectional=False, rnn_dropout=0.3, use_tanh=1, use_relu=0,
-                           layer_norm=False, weight_norm=False)
+        self.rnn = nn.LSTM(256, 256, num_layers=2, bidirectional=False)
 
-        self.decoder = nn.Linear(100, ntoken)
+        self.decoder = nn.Linear(256, ntoken)
 
         # Optionally tie weights as in:
         # "Using the Output Embedding to Improve Language Models" (Press & Wolf 2016)
@@ -40,5 +37,8 @@ class LM(Model):
             output, hidden = self.rnn(emb)
         else:
             output, hidden = self.rnn(emb, hidden)
+
+        output = output.contiguous()
+
         decoded = self.decoder(output.view(output.size(0) * output.size(1), output.size(2)))
         return decoded.view(output.size(0), output.size(1), decoded.size(1)), hidden

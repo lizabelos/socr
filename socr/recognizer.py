@@ -29,16 +29,20 @@ class Recognizer:
         return texts
 
     def output_image_text(self, image, lines, positions, texts):
-        image = Image.new("RGB", image.size)
+        image = Image.new("RGB", (image.size()[3], image.size()[2]))
         image_drawer = ImageDraw.Draw(image)
         font_color = (255, 0, 0)
         for i in range(0, len(positions)):
             if texts[i] != "":
                 x0, y0 = positions[i][0], positions[i][1]
 
-                print((x0, y0))
+                for j in range(0, len(positions[i]) // 2):
+                    if positions[i][j * 2] < x0:
+                        x0 = positions[i][j * 2]
+                    if positions[i][j * 2 + 1] < y0:
+                        y0 = positions[i][j * 2 + 1]
 
-                font = ImageFont.truetype("resources/displayFonts/arial.ttf", lines[i].size[1])
+                font = ImageFont.truetype("resources/displayFonts/arial.ttf", 12)
                 # lines[i].draw_box_to_image(image, image_drawer)
                 image_drawer.text((x0, y0), texts[i], font=font, fill=font_color)
 
@@ -52,9 +56,11 @@ def main(sysarg):
     recognizer = Recognizer()
 
     data_set = FileDataset()
-    for path in sysarg[1:]:
+    for path in sysarg:
         data_set.recursive_list(path)
     data_set.sort()
+
+    print(str(data_set.__len__()) + " files")
 
     loader = torch.utils.data.DataLoader(data_set, batch_size=1, shuffle=False, num_workers=4)
     count = 0
@@ -65,29 +71,27 @@ def main(sysarg):
         percent = i * 100 // data_set.__len__()
         print(str(percent) + "%... Processing " + path[0])
 
-        try:
-            positions, lines = recognizer.recognize_lines(image, resized)
-            texts = recognizer.recognize_texts(image)
+        positions, lines = recognizer.recognize_lines(image, resized)
+        texts = recognizer.recognize_texts(lines)
 
-            print("Creating output image bloc to" + path[0] + ".bloc.result.jpg")
-            output_bloc_image = recognizer.line_localizator.output_image_bloc(image, positions)
-            output_bloc_image.save("results/" + str(count) + ".bloc.jpg", "JPEG")
+        print("Creating output image bloc to" + path[0] + ".bloc.result.jpg")
+        output_bloc_image = recognizer.line_localizator.output_image_bloc(image, positions)
+        output_bloc_image.save("results/" + str(count) + ".bloc.jpg", "JPEG")
 
-            output_line_image = recognizer.output_image_text(image, lines, positions, texts)
-            output_line_image.save("results/" + str(count) + ".line.jpg", "JPEG")
+        output_line_image = recognizer.output_image_text(image, lines, positions, texts)
+        output_line_image.save("results/" + str(count) + ".line.jpg", "JPEG")
 
-            xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
-            if os.path.exists(xml_path):
+        xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
+        if os.path.exists(xml_path):
 
-                shutil.copy2(xml_path, "results/" + str(count) + ".xml")
+            shutil.copy2(xml_path, "results/" + str(count) + ".xml")
 
-                with open("results/" + str(count) + ".txt", "w") as text_file:
-                    text_file.write(recognizer.line_localizator.output_baseline(positions))
+            with open("results/" + str(count) + ".txt", "w") as text_file:
+                text_file.write(recognizer.line_localizator.output_baseline(positions))
 
-            else:
-                print("Can't find : '" + xml_path + "'")
+        else:
+            print("Can't find : '" + xml_path + "'")
 
-        except Exception as e:
-            print(e)
+
 
         count = count + 1

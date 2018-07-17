@@ -58,8 +58,8 @@ class OrientedDocumentGenerator(Generator):
         return image, [x0, y0, x1, y1, height]
 
     def generate(self, index):
-        width = randint(200, 400)
-        height = randint(500, 700)
+        width = randint(300, 400)
+        height = randint(1000, 1100)
 
         new_width = math.sqrt(6 * (10 ** 5) * width / height)
         new_width = new_width * uniform(0.8, 1.2)

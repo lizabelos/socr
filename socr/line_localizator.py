@@ -24,7 +24,7 @@ class LineLocalizator:
     This is the main class of the line localizator.
     """
 
-    def __init__(self, model_name="XHeightResnetModel", lr=0.0001, name=None, is_cuda=True):
+    def __init__(self, model_name="dhSegment", lr=0.0001, name=None, is_cuda=True):
         """
         Creae a line localizator with the given models name
 
@@ -159,6 +159,7 @@ class LineLocalizator:
 
         pillow_lines = [line for line, pos in lines]
         pos = [pos for line, pos in lines]
+
         return pillow_lines, pos
 
     def output_image_bloc(self, image, lines):
@@ -251,7 +252,7 @@ class LineLocalizator:
 def main(sysarg):
     parser = argparse.ArgumentParser(description="socr")
     parser.add_argument('--bs', type=int, default=1)
-    parser.add_argument('--model', type=str, default="XHeightResnetModel", help="Model name")
+    parser.add_argument('--model', type=str, default="dhSegment", help="Model name")
     parser.add_argument('--execute', type=str, default=None)
     parser.add_argument('--evaluate', type=str, default=None)
     parser.add_argument('--generateandexecute', action='store_const', const=True, default=False)

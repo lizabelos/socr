@@ -9,12 +9,16 @@ cdef class LanguageModel:
     cdef int numUniqueWords
     cdef bint smoothing
     cdef float addK
-    cdef dict unigrams
-    cdef dict bigrams
     cdef PrefixTree tree
     cdef str allChars
     cdef str wordChars
     cdef str nonWordChars
+
+    cdef str lastW1
+    cdef str lastW2
+    cdef object lastProb
+
+    cdef object nnGram
 
     cdef getNextWords(self, text)
 
@@ -30,6 +34,6 @@ cdef class LanguageModel:
 
     cdef isWord(self, text)
 
-    cdef getUnigramProb(self, w)
+    cdef getNN(self)
 
     cdef getBigramProb(self, w1, w2)

@@ -26,7 +26,7 @@ class TextRecognizer:
     This is the main class of the text recognizer
     """
 
-    def __init__(self, model_name="DilatationGruNetwork", optimizer_name="Adam", lr=0.001, name=None, is_cuda=True):
+    def __init__(self, model_name="resSru", optimizer_name="Adam", lr=0.001, name=None, is_cuda=True):
         """
         Creae a text recognizer with the given models name
 
@@ -100,8 +100,14 @@ class TextRecognizer:
         self.model.eval()
 
         if self.lm is None:
-            with open("resources/corpus/train.txt", "r") as content_file:
-                self.corpus = content_file.read()
+            with open("resources/words_alpha.txt", "r") as content_file:
+                self.corpus = content_file.read() + "\n"
+
+            with open("resources/artists.txt", "r") as content_file:
+                self.corpus += content_file.read() + "\n"
+
+            with open("resources/mots.json", "r") as content_file:
+                self.corpus += content_file.read()
 
             # self.text_generator = TextGenerator()
 
@@ -197,13 +203,16 @@ class TextRecognizer:
         texts = []
 
         for image in images:
-            image_channels, image_width, image_height = image.shape
-            image = np.resize(image, (image_channels, image_width * height // image_height, height))
+            if image.shape[2] < 64:
+                texts.append("")
+            else:
+                image_channels, image_height, image_width = image.shape
+                image = np.resize(image, (image_channels, height, image_width * height // image_height))
 
-            result = self.model(torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cuda())
-            text = self.loss.ytrue_to_lines(self.lm, result)
+                result = self.model(torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cuda())
+                text = self.loss.ytrue_to_lines(self.lm, result)
 
-            texts.append(text)
+                texts.append(text)
 
         return texts
 
@@ -235,7 +244,7 @@ class TextRecognizer:
 def main(sysarg):
     parser = argparse.ArgumentParser(description="SOCR Text Recognizer")
     parser.add_argument('--bs', type=int, default=1)
-    parser.add_argument('--model', type=str, default="DilatationGruNetwork", help="Model name")
+    parser.add_argument('--model', type=str, default="resSru", help="Model name")
     parser.add_argument('--optimizer', type=str, default="Adam", help="SGD, RMSProp, Adam")
     parser.add_argument('--name', type=str, default=None)
     parser.add_argument('--lr', type=float, default=0.0001, help="Learning rate")
@@ -255,7 +264,7 @@ def main(sysarg):
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)
         line_ctc.eval()
-        line_ctc.test()
+        line_ctc.test(limit=32)
     else:
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)
