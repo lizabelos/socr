@@ -162,7 +162,7 @@ class LineLocalizator:
 
         return pillow_lines, pos
 
-    def output_image_bloc(self, image, lines):
+    def output_image_bloc(self, image, lines, lwidth=5):
         """
         Draw the lines to the image
 
@@ -176,7 +176,7 @@ class LineLocalizator:
         for i in range(0, len(lines)):
             positions = list(lines[i])
             for i in range(0, len(positions) // 2 - 1):
-                image_drawer.line((positions[i * 2], positions[i * 2 + 1], positions[i * 2 + 2], positions[i * 2 + 3]), fill=(128, 0, 0), width=5)
+                image_drawer.line((positions[i * 2], positions[i * 2 + 1], positions[i * 2 + 2], positions[i * 2 + 3]), fill=(128, 0, 0), width=lwidth)
 
         return image
 

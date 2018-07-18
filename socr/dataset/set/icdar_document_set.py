@@ -174,12 +174,12 @@ class ICDARDocumentSet(Dataset):
             h = h * new_height // height
             new_regions.append([x0, y0, x1, y1, h])
 
-        label = self.loss.document_to_ytrue([new_width, new_height], new_regions)
+        label = self.loss.document_to_ytrue(np.array([new_width, new_height], dtype='int32'), np.array(new_regions, dtype='int32'))
         image = np.array(image, dtype='float') / 255.0
 
-        angle = randint(-45, 45)
-        label = rotate(label, angle)
-        image = rotate(image, angle)
+        # angle = randint(-45, 45)
+        # label = rotate(label, angle, order=0)
+        # image = rotate(image, angle, order=0)
 
         # image = np.swapaxes(image, 0, 2)
         # image = np.swapaxes(image, 1, 2)

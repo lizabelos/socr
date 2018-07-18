@@ -58,7 +58,7 @@ class TextRecognizer:
         self.test_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=False,
                                                                testing=True,
                                                                args={"height": self.model.get_input_image_height(),
-                                                                     "labels": self.labels, "transform": True})
+                                                                     "labels": self.labels, "transform": False})
         print_normal("Test database length : " + str(self.test_database.__len__()))
 
         self.corpus = None
@@ -139,7 +139,7 @@ class TextRecognizer:
             result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
             text = self.loss.ytrue_to_lines(self.lm, result)
 
-            if count == 0:
+            if True:
                 print(text)
                 print(label)
                 print("\n")
@@ -264,7 +264,7 @@ def main(sysarg):
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)
         line_ctc.eval()
-        line_ctc.test(limit=32)
+        line_ctc.test()
     else:
         download_resources()
         line_ctc = TextRecognizer(args.model, args.optimizer, args.lr, args.name, not args.disablecuda)

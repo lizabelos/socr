@@ -11,7 +11,7 @@ class LM(Model):
         super(LM, self).__init__()
         self.encoder = nn.Embedding(ntoken, 256)
 
-        self.rnn = nn.LSTM(256, 256, num_layers=2, bidirectional=False)
+        self.rnn = nn.GRU(256, 256, num_layers=3, bidirectional=False, dropout=0.3)
 
         self.decoder = nn.Linear(256, ntoken)
 

@@ -53,28 +53,34 @@ class DocumentTextLine(AbstractDocument):
         return count_resource("fonts")
 
     def generate_random(self, index=-1):
-        width, height = self.get_size()
+        try:
+            width, height = self.get_size()
 
-        if self.top is None:
-            self.text = peak_random_preloaded_text("texts")
-            self.font = self.get_random_font(height, index)
-        else:
-            self.text = self.top.get_text_excess()
-            self.font = self.top.get_font()
+            if self.top is None:
+                self.text = peak_random_preloaded_text("texts")
+                self.font = self.get_random_font(height, index)
+                self.font.getsize("Test")
+            else:
+                self.text = self.top.get_text_excess()
+                self.font = self.top.get_font()
 
-        self.excess = ""
+            self.excess = ""
 
-        if width is not None:
-            text_width, _ = self.font.getsize(self.text)
-            while text_width < width:
-                self.text = self.text + " " + peak_random_preloaded_text("texts")
+            if width is not None:
                 text_width, _ = self.font.getsize(self.text)
+                while text_width < width:
+                    self.text = self.text + " " + peak_random_preloaded_text("texts")
+                    text_width, _ = self.font.getsize(self.text)
 
-            while text_width > width:
-                index = self.text.rfind(" ")
-                self.excess = self.text[index + 1:] + " " + self.excess
-                self.text = self.text[:index]
-                text_width, _ = self.font.getsize(self.text)
+                while text_width > width:
+                    index = width * len(self.text) // text_width
+                    # index = self.text.rfind(" ")
+                    self.excess = self.text[index + 1:] + " " + self.excess
+                    self.text = self.text[:index]
+                    text_width, _ = self.font.getsize(self.text)
+        except OSError:
+            print("Warning : Execution context too long")
+            return self.generate_random()
 
     def get_maximum_width(self):
         w, h = self.font.getsize(self.text)

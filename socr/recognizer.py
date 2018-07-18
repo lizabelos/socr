@@ -42,7 +42,7 @@ class Recognizer:
                     if positions[i][j * 2 + 1] < y0:
                         y0 = positions[i][j * 2 + 1]
 
-                font = ImageFont.truetype("resources/displayFonts/arial.ttf", 12)
+                font = ImageFont.truetype("resources/displayFonts/arial.ttf", 24)
                 # lines[i].draw_box_to_image(image, image_drawer)
                 image_drawer.text((x0, y0), texts[i], font=font, fill=font_color)
 
@@ -75,7 +75,7 @@ def main(sysarg):
         texts = recognizer.recognize_texts(lines)
 
         print("Creating output image bloc to" + path[0] + ".bloc.result.jpg")
-        output_bloc_image = recognizer.line_localizator.output_image_bloc(image, positions)
+        output_bloc_image = recognizer.line_localizator.output_image_bloc(image, positions, lwidth=1)
         output_bloc_image.save("results/" + str(count) + ".bloc.jpg", "JPEG")
 
         output_line_image = recognizer.output_image_text(image, lines, positions, texts)

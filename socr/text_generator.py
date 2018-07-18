@@ -142,7 +142,7 @@ class TextGenerator:
 
         output = torch.nn.functional.softmax(output, dim=2)
 
-        word_weights = output.cpu().exp().detach().numpy()
+        word_weights = output.cpu().detach().numpy()
         result = word_weights[0][len(words) - 1][last_word]
 
         return result

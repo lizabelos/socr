@@ -52,6 +52,7 @@ class IAMHandwritingLineDataset(Dataset):
         return len(self.labels)
 
     def get(self, index):
+        index = index % len(self.labels)
         id, text = self.labels[index]
         ids = id.split("-")
         image_path = os.path.join(self.images_path, ids[0] + "/" + ids[0] + "-" + ids[1] + "/" + ids[0] + "-" + ids[1] + "-" + ids[2] + ".png")

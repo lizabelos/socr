@@ -37,6 +37,9 @@ class FileDataset(Dataset):
         new_width = int(new_width)
         new_height = height * new_width // width
 
-        resized = image.resize((new_width, new_height), Image.ANTIALIAS)
+        if new_width < width:
+            resized = image.resize((new_width, new_height), Image.ANTIALIAS)
+        else:
+            resized = image
 
         return image_pillow_to_numpy(resized), image_pillow_to_numpy(image), self.list[index]

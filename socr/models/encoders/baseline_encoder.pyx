@@ -16,13 +16,12 @@ cdef class BaselineEncoder:
         y_true[y][x][1] = height * self.height_factor
 
     cdef plot_radius(self, float[:,:,:] y_true, int x, int y, int height):
-        cdef int radius = 3
-        for i in range(-radius, radius):
-            for j in range(-radius, radius):
-                if abs(i) * abs(i) + abs(j) * abs(j) < radius * radius:
-                    self.plot(y_true, x + i, y + j, height)
+        cdef int radius = 2
+        for i in range(-radius, radius + 1):
+            for j in range(-radius, radius + 1):
+                self.plot(y_true, x + i, y + j, height)
 
-    cdef draw_vertical_line(self, float[:,:,:] y_true, list line):
+    cdef draw_vertical_line(self, float[:,:,:] y_true, int[:] line):
         cdef int x0 = line[0]
         cdef int y0 = line[1]
         cdef int x1 = line[2]
@@ -32,7 +31,7 @@ cdef class BaselineEncoder:
         for y in range(y0, y1):
             self.plot_radius(y_true, x0, y, height)
 
-    cdef draw_line(self, float[:,:,:] y_true, list line):
+    cdef draw_line(self, float[:,:,:] y_true, int[:] line):
         cdef int x0 = line[0]
         cdef int y0 = line[1]
         cdef int x1 = line[2]
@@ -55,10 +54,10 @@ cdef class BaselineEncoder:
                 y = y + sign
                 error = error - 1.0
 
-    cpdef encode(self, list image_size, list base_lines):
+    cpdef encode(self, int[:] image_size, int[:,:] base_lines):
         cdef float[:,:,:] y_true = np.zeros((image_size[1], image_size[0], 2), dtype=np.float32)
 
-        for line in base_lines:
-            self.draw_line(y_true, line)
+        for i in range(0, base_lines.shape[0]):
+            self.draw_line(y_true, base_lines[i])
 
         return np.asarray(y_true)
