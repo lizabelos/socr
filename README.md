@@ -30,24 +30,7 @@ Then run
 
 ### API
 
-SOCR work with Numpy library to process the images.
-
-```python
-from socr.line_localizator import LineLocalizator
-from socr.text_recognizer import TextRecognizer
-
-line_localizator = LineLocalizator()
-text_recognizer = TextRecognizer()
-
-line_localizator.eval()
-text_recognizer.eval()
-
-lines, positions = line_localizator.extract(original_image, resized)
-texts = text_recognizer.recognize(lines)
-
-print("Full text : \n" + "\n".join(texts))
-```
-
+See [example.ipnyb](exemples/exemple.ipnyb)
 
 ## How to train/test
 
