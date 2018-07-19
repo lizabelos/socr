@@ -32,7 +32,7 @@ Then run
 
 See [example.ipnyb](examples/example.ipynb)
 
-## How to train/test
+## How to train/test with command line
 
 ### Settings up the database
 
@@ -71,5 +71,4 @@ Use ```CUDA_VISIBLE_DEVICES=0,1``` to select the available GPU. SOCR will use al
 
 ## Make a custom model
 
-You can make a custom model by placing it under the ```models``` folder. See ```dilatation_gru_network.py``` and ```dhSegment.py``` for example.
-Each model has to be declared into the ```__init__.py``` file under the ```models``` folder.
+See [example.ipnyb](socr/models/README.md)
