@@ -138,8 +138,8 @@ class dhSegment(ConvolutionalModel):
         min_width = min([d.size()[1] for d in data])
         min_height = min([d.size()[0] for d in data])
 
-        min_width = min(min_width, 512)
-        min_height = min(min_height, 512)
+        min_width = min(min_width, 300)
+        min_height = min(min_height, 300)
 
         new_data = []
         new_label = []

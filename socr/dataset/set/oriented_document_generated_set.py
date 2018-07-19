@@ -18,7 +18,9 @@ class OrientedDocumentGeneratedSet(Dataset):
         image, label = self.generate_image_with_label(index)
 
         image = np.array(image, dtype='float') / 255.0
-        label = self.loss.document_to_ytrue([image.shape[1], image.shape[0]], label)
+        label = self.loss.document_to_ytrue(np.array([image.shape[1], image.shape[0]], dtype='int32'),
+                                            np.array(label, dtype='int32'))
+
 
         # angle = randint(-45, 45)
         # label = rotate(label, angle, order=0)

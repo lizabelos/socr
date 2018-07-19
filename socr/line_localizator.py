@@ -7,6 +7,7 @@ import sys
 from random import randint
 
 import torch
+import numpy as np
 from PIL import Image, ImageDraw
 
 from socr.dataset import parse_datasets_configuration_file, DocumentGeneratorHelper
@@ -150,6 +151,13 @@ class LineLocalizator:
         :param image: A tensor image
         :return: The extracted line, as pillow image, and their positions
         """
+        if type(original_image).__module__ == np.__name__:
+            original_image = torch.from_numpy(original_image).unsqueeze(0)
+
+        if type(resized_image).__module__ == np.__name__:
+            resized_image = torch.from_numpy(resized_image).unsqueeze(0)
+
+
         image = torch.autograd.Variable(resized_image).float()
         image = image.cuda()
 

@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import Dataset
 
 from socr.dataset.set.file_dataset import FileDataset
+from socr.utils.image import image_numpy_to_pillow
 from .line_localizator import LineLocalizator
 from .text_recognizer import TextRecognizer
 
@@ -42,7 +43,7 @@ class Recognizer:
                     if positions[i][j * 2 + 1] < y0:
                         y0 = positions[i][j * 2 + 1]
 
-                font = ImageFont.truetype("resources/displayFonts/arial.ttf", 24)
+                font = ImageFont.truetype("resources/displayFonts/arial.ttf", 12)
                 # lines[i].draw_box_to_image(image, image_drawer)
                 image_drawer.text((x0, y0), texts[i], font=font, fill=font_color)
 
@@ -80,6 +81,11 @@ def main(sysarg):
 
         output_line_image = recognizer.output_image_text(image, lines, positions, texts)
         output_line_image.save("results/" + str(count) + ".line.jpg", "JPEG")
+
+        os.makedirs("results/" + str(count))
+
+        for k in range(0, len(lines)):
+            image_numpy_to_pillow(lines[k]).save("results/" + str(count) + "/" + str(k) + ".jpg")
 
         xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
         if os.path.exists(xml_path):
