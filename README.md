@@ -8,7 +8,7 @@ Structured OCR is a line localization and text recognition tools using Deep Lear
 
 ### Requirements
 
- - NVIDIA Graphic Card with CUDA 8 minimum
+ - If you want to use GPU, **NVIDIA Graphic Card with CUDA 8 minimum**, otherwhise use ```--disablecuda``` 
  - Python 3 with Anaconda and Pip
  - GCC and G++ Version 5 (even if it's not your default compiler)
 
@@ -37,43 +37,7 @@ See [example.ipnyb](examples/example.ipynb)
 ### Settings up the database
 
 Modify the file ```datasets.cfg``` so it correspond to your data-sets.
-
-```cfg
-[DocumentGenerator]
-for = Document
-type = DocumentGenerator
-train = yes
-test = yes
-
-[ICDAR]
-for = Document
-type = ICDAR-Baseline
-train = /dataset/icdar/img/training
-
-[LineGenerator]
-for = Line
-type = LineGenerator
-train = yes
-test = no
-
-[IAM]
-for = Line
-type = IAM
-train = /dataset/iam-line/train
-test = /dataset/iam-line/test
-
-[IAM-One-Line]
-for = Line
-type = IAM-One-Line
-train = /dataset/iam-one-line/train
-test = /dataset/iam-one-line/test
-
-[IAM-Washington]
-for = Line
-type = IAM-Washington
-train = /dataset/iam-washington/
-
-```
+See [example.ipnyb](examples/datasets.example.cfg) for a example.
 
 ### How to train/test the line recognizer ?
 
