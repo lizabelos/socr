@@ -30,7 +30,7 @@ Then run
 
 ### API
 
-See [example.ipnyb](exemples/exemple.ipnyb)
+See [example.ipnyb](examples/example.ipynb)
 
 ## How to train/test
 
