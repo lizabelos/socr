@@ -17,7 +17,7 @@ cdef class BaselineDecoder:
     def __init__(self, height_factor):
         self.height_factor = height_factor
 
-    cpdef list decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3):
+    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3):
         cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0])
         cdef int num_components = np.max(components)
         cdef list results = []
@@ -27,7 +27,7 @@ cdef class BaselineDecoder:
             if result is not None:
                 results.append(result)
 
-        return results
+        return results, components
 
     cdef tuple process_components(self, double[:,:,:] image, float[:,:,:] prediction, int[:,:] components, int index, int degree=3, int line_height=64, int baseline_resolution=16, bint with_image=True):
         cdef list x_train = []

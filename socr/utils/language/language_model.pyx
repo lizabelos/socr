@@ -52,8 +52,13 @@ cdef class LanguageModel:
         # nextChars += nextChars.upper()
 
         # if in between two words or if word ends, add non-word chars
-        if (text == '') or (self.isWord(text)):
+        # if (text == '') or (self.isWord(text)):
+        #     nextChars += self.getNonWordChars()
+        if text == '':
             nextChars += self.getNonWordChars()
+
+        if self.isWord(text):
+            nextChars += " "
 
         return nextChars
 

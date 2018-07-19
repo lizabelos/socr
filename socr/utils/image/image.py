@@ -22,6 +22,10 @@ def image_numpy_to_pillow(image):
     image = image * 255.0
     return Image.fromarray(image.astype('uint8'), 'RGB')
 
+def image_numpy_to_pillow_bw(image):
+    image = image * 255.0
+    return Image.fromarray(image.astype('uint8'), 'L')
+
 
 def image_pytorch_to_pillow(image):
     return image_numpy_to_pillow(image.cpu().detach().numpy())

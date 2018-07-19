@@ -6,7 +6,8 @@ from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import Dataset
 
 from socr.dataset.set.file_dataset import FileDataset
-from socr.utils.image import image_numpy_to_pillow
+from socr.utils.image import image_numpy_to_pillow, image_numpy_to_pillow_bw
+from socr.utils.image.connected_components import save_connected_components
 from .line_localizator import LineLocalizator
 from .text_recognizer import TextRecognizer
 
@@ -22,8 +23,8 @@ class Recognizer:
         self.text_recognizer.eval()
 
     def recognize_lines(self, image, resized):
-        lines, positions = self.line_localizator.extract(image, resized)
-        return positions, lines
+        lines, positions, probsmap, components = self.line_localizator.extract(image, resized)
+        return positions, lines, probsmap, components
 
     def recognize_texts(self, lines):
         texts = self.text_recognizer.recognize(lines)
@@ -72,7 +73,7 @@ def main(sysarg):
         percent = i * 100 // data_set.__len__()
         print(str(percent) + "%... Processing " + path[0])
 
-        positions, lines = recognizer.recognize_lines(image, resized)
+        positions, lines, probsmap, components = recognizer.recognize_lines(image, resized)
         texts = recognizer.recognize_texts(lines)
 
         print("Creating output image bloc to" + path[0] + ".bloc.result.jpg")
@@ -81,6 +82,10 @@ def main(sysarg):
 
         output_line_image = recognizer.output_image_text(image, lines, positions, texts)
         output_line_image.save("results/" + str(count) + ".line.jpg", "JPEG")
+
+        save_connected_components(components, "results/" + str(count) + ".components.jpg")
+
+        image_numpy_to_pillow_bw(probsmap[0].cpu().detach().numpy()).save( "results/" + str(count) + ".probs.jpg")
 
         os.makedirs("results/" + str(count))
 

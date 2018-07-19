@@ -32,18 +32,18 @@ cpdef wordBeamSearch(float[:,:] mat, int beamWidth, LanguageModel lm, bint useNG
     cdef str c
 
     cdef int max
-    cdef str maxC
+    # cdef str maxC
 
     # go over all time-steps
     for t in range(maxT):
 
-        max = 0
-        maxC = ''
-        for i in range(1, maxId):
-            if mat[t, i] > mat[t, max]:
-                max = i
-        if max != 0:
-            maxC = chars[max - 1]
+        # max = 0
+        # maxC = ''
+        # for i in range(1, maxId):
+        #     if mat[t, i] > mat[t, max]:
+        #         max = i
+        # if max != 0:
+        #     maxC = chars[max - 1]
             # print(maxC)
 
         curr = BeamList()  # list of beams at current time-step

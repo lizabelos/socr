@@ -184,12 +184,12 @@ class LineLocalizator:
 
         image = self.loss.process_labels(image)
         result = self.model(torch.autograd.Variable(image))[0]
-        lines = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(), with_images)
+        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(), with_images)
 
         pillow_lines = [line for line, pos in lines]
         pos = [pos for line, pos in lines]
 
-        return pillow_lines, pos
+        return pillow_lines, pos, result, components
 
     def output_image_bloc(self, image, lines, lwidth=5):
         """
