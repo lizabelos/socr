@@ -32,6 +32,11 @@ Then run
 
 See [example.ipnyb](examples/example.ipynb)
 
+### Trained models
+
+You can download the trained models and copy it to the checkpoints folder : 
+[Download on DropBox](https://www.dropbox.com/sh/wvhdnldsq4652wx/AAA3iUDFWHVh56zPia10nwrQa?dl=0)
+
 ## How to train/test with command line
 
 ### Settings up the database
@@ -71,4 +76,4 @@ Use ```CUDA_VISIBLE_DEVICES=0,1``` to select the available GPU. SOCR will use al
 
 ## Make a custom model
 
-See [example.ipnyb](socr/models/README.md)
+See [socr/models/README.md](socr/models/README.md)
