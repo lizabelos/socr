@@ -40,6 +40,10 @@ class LineLocalizator:
         if is_cuda:
             self.model = self.model.cuda()
             self.loss = self.loss.cuda()
+        else:
+            print_warning("Using the CPU")
+            self.model = self.model.cpu()
+            self.loss = self.loss.cpu()
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=0.000001)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
@@ -113,9 +117,15 @@ class LineLocalizator:
         """
         Show the result of the network in some data from test data-set
         """
+        is_cuda = next(self.model.parameters()).is_cuda
         for i in range(0, 4):
             image, label = self.test_database.__getitem__(randint(0, len(self.test_database) - 1))
-            result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))[0]
+
+            if is_cuda:
+                result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))[0]
+            else:
+                result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cpu()))[0]
+
             self.loss.show_ytrue(image.cpu().numpy(), result.cpu().detach().numpy())
             lines = self.loss.ytrue_to_lines(image.cpu().numpy(), result.cpu().detach().numpy())
             for line, pos in lines:
@@ -126,6 +136,8 @@ class LineLocalizator:
         Show the result of the network on the given image
         :param image_path: The path of the image
         """
+        is_cuda = next(self.model.parameters()).is_cuda
+
         image = Image.open(image_path).convert('RGB')
 
         width, height = image.size
@@ -138,7 +150,11 @@ class LineLocalizator:
         image = torch.from_numpy(image_pillow_to_numpy(image))
         resized = torch.from_numpy(image_pillow_to_numpy(resized))
 
-        result = self.model(torch.autograd.Variable(resized.unsqueeze(0).float().cuda()))[0]
+        if is_cuda:
+            result = self.model(torch.autograd.Variable(resized.unsqueeze(0).float().cuda()))[0]
+        else:
+            result = self.model(torch.autograd.Variable(resized.unsqueeze(0).float().cpu()))[0]
+
         self.loss.show_ytrue(resized.cpu().numpy(), result.cpu().detach().numpy())
         lines = self.loss.ytrue_to_lines(image.cpu().numpy(), result.cpu().detach().numpy())
         for line, pos in lines:
@@ -157,9 +173,14 @@ class LineLocalizator:
         if type(resized_image).__module__ == np.__name__:
             resized_image = torch.from_numpy(resized_image).unsqueeze(0)
 
+        is_cuda = next(self.model.parameters()).is_cuda
 
         image = torch.autograd.Variable(resized_image).float()
-        image = image.cuda()
+
+        if is_cuda:
+            image = image.cuda()
+        else:
+            image = image.cpu()
 
         image = self.loss.process_labels(image)
         result = self.model(torch.autograd.Variable(image))[0]

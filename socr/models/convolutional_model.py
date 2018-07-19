@@ -16,7 +16,9 @@ class ConvolutionalModel(Model):
     def forward_fc(self, input): pass
 
     def forward(self, input):
-        return self.forward_fc(self.forward_cnn(input))
+        input = self.forward_cnn(input)
+        input = self.forward_fc(input)
+        return input
 
     def get_cnn_output_size(self):
         shape = [1, 3, self.get_input_image_height(), self.get_input_image_width()]

@@ -103,7 +103,7 @@ class PSPUpsample(nn.Module):
     def forward(self, x, addition=None):
         h, w = 2 * x.size(2), 2 * x.size(3)
         if addition is not None:
-            p = F.upsample(input=x, size=(addition.size(2), addition.size(3)), mode='bilinear')
+            p = F.upsample(input=x, size=(addition.size(2), addition.size(3)), mode='bilinear', align_corners=False)
             p = torch.cat((p, addition), dim=1)
         else:
             p = F.upsample(input=x, size=(h, w), mode='bilinear')

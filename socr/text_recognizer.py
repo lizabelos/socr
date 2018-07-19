@@ -15,7 +15,7 @@ from socr.text_generator import TextGenerator
 from socr.utils.image import show_pytorch_image
 from socr.utils.language.language_model import LanguageModel
 
-from socr.utils.logging.logger import print_normal
+from socr.utils.logging.logger import print_normal, print_warning
 from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer
@@ -49,6 +49,10 @@ class TextRecognizer:
         if is_cuda:
             self.model = self.model.cuda()
             self.loss = self.loss.cuda()
+        else:
+            print_warning("Using the CPU")
+            self.model = self.model.cpu()
+            self.loss = self.loss.cpu()
 
         self.optimizer = get_optimizer_by_name(optimizer_name)(self.model.parameters(), lr=lr)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
@@ -121,6 +125,8 @@ class TextRecognizer:
         :param limit: Limit of images of the test
         :return: The average cer
         """
+        is_cuda = next(self.model.parameters()).is_cuda
+
         loader = torch.utils.data.DataLoader(self.test_database, batch_size=1, shuffle=False, num_workers=1)
 
         test_len = len(self.test_database)
@@ -136,7 +142,11 @@ class TextRecognizer:
         for i, data in enumerate(loader, 0):
             image, label = self.test_database.__getitem__(i)
 
-            result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
+            if is_cuda:
+                result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
+            else:
+                result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cpu()))
+
             text = self.loss.ytrue_to_lines(self.lm, result)
 
             if True:
@@ -180,13 +190,19 @@ class TextRecognizer:
 
         :param onlyhand: Use only handwritting if true
         """
+        is_cuda = next(self.model.parameters()).is_cuda
+
         while True:
             if not onlyhand:
                 image, label = self.test_database.__getitem__(randint(0, len(self.test_database) - 1))
             else:
                 image, label = self.test_iam.__getitem__(randint(0, len(self.test_iam) - 1))
 
-            result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
+            if is_cuda:
+                result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
+            else:
+                result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cpu()))
+
             text = self.loss.ytrue_to_lines(result)
 
             show_pytorch_image(image)
@@ -198,6 +214,7 @@ class TextRecognizer:
         :param images: The images
         :return: The texts
         """
+        is_cuda = next(self.model.parameters()).is_cuda
 
         height = self.model.get_input_image_height()
         texts = []
@@ -209,7 +226,12 @@ class TextRecognizer:
                 image_channels, image_height, image_width = image.shape
                 image = np.resize(image, (image_channels, height, image_width * height // image_height))
 
-                result = self.model(torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cuda())
+                if is_cuda:
+                    result = self.model(
+                        torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cuda())
+                else:
+                    result = self.model(torch.autograd.Variable(torch.from_numpy(np.expand_dims(image, axis=0))).float().cpu())
+
                 text = self.loss.ytrue_to_lines(self.lm, result)
 
                 texts.append(text)

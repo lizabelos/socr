@@ -5,6 +5,7 @@ from datetime import datetime
 import numpy as np
 import torch
 
+from socr.nn.modules.cpu_parallel import CPUParallel
 from socr.utils.logging.logger import print_normal, print_warning, print_error, TerminalColors
 from socr.utils.maths.moving_average import MovingAverage
 
@@ -30,7 +31,12 @@ class Trainer:
         if checkpoint_userdata is None:
             checkpoint_userdata = {}
         self.original_model = model
-        self.model = torch.nn.DataParallel(model)
+
+        is_cuda = next(model.parameters()).is_cuda
+        if is_cuda:
+            self.model = torch.nn.DataParallel(model)
+        else:
+            self.model = CPUParallel(model)
         self.loss = loss
         self.optimizer = optimizer
         self.checkpoint_userdata = checkpoint_userdata
@@ -151,7 +157,7 @@ class Trainer:
                 if i == "no":
                     break
 
-    def do_one_epoch(self, data_loader, batch_size, csv_file, is_cuda=True):
+    def do_one_epoch(self, data_loader, batch_size, csv_file):
         """
         Train for one epoch
 
@@ -159,6 +165,7 @@ class Trainer:
         :param batch_size: The batch size
         :param csv_file: The csv file where to write the results
         """
+        is_cuda = next(self.model.parameters()).is_cuda
         self.model.train()
 
 
@@ -173,6 +180,8 @@ class Trainer:
             variable = torch.autograd.Variable(inputs).float()
             if is_cuda:
                 variable = variable.cuda()
+            else:
+                variable = variable.cpu()
 
             outputs = self.model(variable)
             loss_value = self.loss.forward(outputs, self.loss.process_labels(labels, is_cuda=is_cuda))

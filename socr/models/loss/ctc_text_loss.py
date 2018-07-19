@@ -1,6 +1,7 @@
 import torch
 
 from socr.utils.language.word_beam_search import wordBeamSearch
+from socr.utils.logging.logger import print_normal, print_warning
 from socr.utils.setup.build import install_and_import_wrapctc
 
 warpctc = install_and_import_wrapctc()
@@ -20,7 +21,17 @@ class CTCTextLoss(Loss):
 
         self.labels = labels
         self.labels_len = len(self.labels) + 1
-        self.loss = warpctc.CTCLoss(size_average=True, length_average=True).cuda()
+        self.loss = warpctc.CTCLoss(size_average=True, length_average=True)
+
+    def cuda(self, **kwargs):
+        print_normal("Using CTCLoss with CUDA")
+        self.loss.cuda()
+        return self
+
+    def cpu(self):
+        print_warning("Using CTCLoss with CPU")
+        self.loss.cpu()
+        return self
 
     def forward(self, inputs, truth):
         labels, labels_length = truth

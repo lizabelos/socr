@@ -27,10 +27,8 @@ def preload_image_resources(name):
     global resource_preloaded_image
 
     if not name in resource_preloaded_image:
-        print("Preloading " + name + "...")
         resource = list_resources(name)
         resource_preloaded_image[name] = [Image.open(path).convert('RGB') for path in resource]
-        print("Done !")
 
     return resource_preloaded_image[name]
 
@@ -39,7 +37,6 @@ def preload_text_ressources(name):
     global resource_preloaded_texts
 
     if not name in resource_preloaded_texts:
-        print("Preloading " + name + "...")
         resources = list_resources(name)
         resource_preloaded_texts[name] = []
         for resource in resources:
