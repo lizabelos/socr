@@ -1,4 +1,5 @@
 import gzip
+from configparser import ConfigParser
 from os import listdir
 from os.path import join, isfile
 from random import randint
@@ -88,7 +89,23 @@ iam_handwriting_line_dataset_instance = None
 
 def get_iam_handwriting_line_dataset_instance():
     global iam_handwriting_line_dataset_instance
+
     if iam_handwriting_line_dataset_instance is None:
-        # TODO : put in a global variable
-        iam_handwriting_line_dataset_instance = IAMHandwritingLineDataset("/space_sde/tbelos/dataset/iam-line/train")
+
+        config = ConfigParser()
+        config.read("datasets.cfg")
+
+        for section in config.sections():
+            dict = {}
+            options = config.options(section)
+            for option in options:
+                dict[option] = config.get(section, option)
+
+            if dict["for"] == "Line" and "train" in dict:
+                iam_handwriting_line_dataset_instance = IAMHandwritingLineDataset(dict["train"])
+                print("Using " + dict["train"] + " for the generator")
+                return iam_handwriting_line_dataset_instance
+
+        assert iam_handwriting_line_dataset_instance is not None
+
     return iam_handwriting_line_dataset_instance

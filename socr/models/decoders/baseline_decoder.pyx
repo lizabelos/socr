@@ -17,19 +17,19 @@ cdef class BaselineDecoder:
     def __init__(self, height_factor):
         self.height_factor = height_factor
 
-    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3):
+    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3, bint brut_points=False):
         cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0])
         cdef int num_components = np.max(components)
         cdef list results = []
 
         for i in range(1, num_components + 1):
-            result = self.process_components(image, predicted, components, i, with_image=with_images, degree=degree, line_height=64, baseline_resolution=16)
+            result = self.process_components(image, predicted, components, i, with_image=with_images, degree=degree, line_height=64, baseline_resolution=16, brut_points=brut_points)
             if result is not None:
                 results.append(result)
 
         return results, components
 
-    cdef tuple process_components(self, double[:,:,:] image, float[:,:,:] prediction, int[:,:] components, int index, int degree=3, int line_height=64, int baseline_resolution=16, bint with_image=True):
+    cdef tuple process_components(self, double[:,:,:] image, float[:,:,:] prediction, int[:,:] components, int index, int degree=3, int line_height=64, int baseline_resolution=16, bint with_image=True, bint brut_points=False):
         cdef list x_train = []
         cdef list y_data = []
 
@@ -73,10 +73,15 @@ cdef class BaselineDecoder:
 
         cdef list baseline_points = []
 
-        for i in range(0, baseline_resolution + 1):
-            x = min_x * (i / baseline_resolution) + max_x * ((baseline_resolution - i) / baseline_resolution)
-            baseline_points.append(int(x * image.shape[2] / prediction.shape[2]))
-            baseline_points.append(int(ffit(x) * image.shape[1] / prediction.shape[1]))
+        if not brut_points:
+            for i in range(0, baseline_resolution + 1):
+                x = min_x * (i / baseline_resolution) + max_x * ((baseline_resolution - i) / baseline_resolution)
+                baseline_points.append(int(x * image.shape[2] / prediction.shape[2]))
+                baseline_points.append(int(ffit(x) * image.shape[1] / prediction.shape[1]))
+        else:
+            for i in range(9, len(x_train)):
+                baseline_points.append(int(x_train[i] * image.shape[2] / prediction.shape[2]))
+                baseline_points.append(int(y_data[i] * image.shape[1] / prediction.shape[1]))
 
         line = None
 

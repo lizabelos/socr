@@ -64,5 +64,5 @@ class XHeightCCLoss(Loss):
         return var
 
     def ytrue_to_lines(self, image, predicted, with_images=True):
-        return self.decoder.decode(image, predicted, with_images, degree=3)
+        return self.decoder.decode(image, predicted, with_images, degree=3, brut_points=True)
 

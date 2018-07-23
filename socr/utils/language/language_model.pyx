@@ -48,8 +48,16 @@ cdef class LanguageModel:
 
     cdef getNextChars(self, text):
         "text must be prefix of a word"
+
+        if bool(re.match('^[0123456789]+$', text)):
+            return "0123456789 "
+
         nextChars = str().join(self.tree.getNextChars(text.lower()))
         # nextChars += nextChars.upper()
+
+
+        # need to make a get alpha chars with lower probability
+        # todo
 
         # if in between two words or if word ends, add non-word chars
         # if (text == '') or (self.isWord(text)):
@@ -59,6 +67,11 @@ cdef class LanguageModel:
 
         if self.isWord(text):
             nextChars += " "
+
+        if bool(re.match('^[XVI]+$', text)):
+            for c in "XVI ":
+                if text.find(c) < 0:
+                    text += c
 
         return nextChars
 

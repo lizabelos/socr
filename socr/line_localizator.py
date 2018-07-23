@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import sys
+from configparser import ConfigParser
 from random import randint
 
 import torch
@@ -236,6 +237,8 @@ class LineLocalizator:
 
         :param path: The path of the images, with or without associated XMLs
         """
+        print_normal("Evaluating " + path)
+
         if not os.path.exists("results"):
             os.makedirs("results")
 
@@ -253,7 +256,7 @@ class LineLocalizator:
             percent = i * 100 // data_set.__len__()
             sys.stdout.write(str(percent) + "%... Processing \r")
 
-            lines, positions = self.extract(image, resized, with_images=False)
+            lines, positions, _, _ = self.extract(image, resized, with_images=False)
 
             self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
 
@@ -272,9 +275,20 @@ class LineLocalizator:
 
     def callback(self):
         self.eval()
-        # TODO : Remove hard coded path
         subprocess.run(['rm', '-R', 'results'])
-        self.evaluate("/space_sde/tbelos/dataset/icdar/2017-baseline/validation-complex")
+
+        config = ConfigParser()
+        config.read("datasets.cfg")
+
+        for section in config.sections():
+            dict = {}
+            options = config.options(section)
+            for option in options:
+                dict[option] = config.get(section, option)
+
+            if dict["for"] == "Document" and "test" in dict:
+                self.evaluate(dict["test"])
+
         subprocess.run(['sh','evaluate.sh'])
 
 
