@@ -6,6 +6,7 @@ from socr.dataset.generator.line_generator import LineGenerator
 from socr.dataset.set.line_generated_set import LineGeneratedSet
 from socr.dataset.set.oriented_document_generated_set import OrientedDocumentGeneratedSet
 from socr.dataset.set.iam_handwriting_line_database import IAMHandwritingLineDatabase
+from socr.dataset.set.iam_handwriting_word_database import IAMHandwritingWordDatabase
 from socr.dataset.set.iam_oneline_handwriting_database import IAMOneLineHandwritingDatabase
 from socr.dataset.set.iam_washington import IAMWashington
 from socr.dataset.set.icdar_document_set import ICDARDocumentSet
@@ -78,6 +79,9 @@ def parse_dataset(helper, type, path, args=None):
 
     if type == "IAM":
         return IAMHandwritingLineDatabase(helper, path, **args)
+
+    if type == "IAM-Word":
+        return IAMHandwritingWordDatabase(helper, path, **args)
 
     if type == "IAM-One-Line":
         return IAMOneLineHandwritingDatabase(helper, path, **args)

@@ -149,11 +149,6 @@ class TextRecognizer:
 
             text = self.loss.ytrue_to_lines(self.lm, result)
 
-            if True:
-                print(text)
-                print(label)
-                print("\n")
-
             # update CER statistics
             _, (s, i, d) = levenshtein(label, text)
             cer_s += s

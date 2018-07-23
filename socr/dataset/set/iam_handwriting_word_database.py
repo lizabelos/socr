@@ -1,4 +1,6 @@
 import os
+from os.path import isfile
+
 from lxml import etree
 
 import torch
@@ -8,7 +10,7 @@ from torch.utils.data.dataset import Dataset
 from socr.utils.image import image_pillow_to_numpy
 
 
-class IAMHandwritingLineDatabase(Dataset):
+class IAMHandwritingWordDatabase(Dataset):
 
     def __init__(self, helper, path, height=32, labels="", transform=True):
         self.height = height
@@ -45,7 +47,18 @@ class IAMHandwritingLineDatabase(Dataset):
         for children in root.getchildren():
             if children.tag.title() == "Word":
                 text, id = self.parse_xml_tree_word(children)
-                self.labels.append((text, id))
+
+                ids = id.split("-")
+                image_path = os.path.join(self.images_path,
+                                          ids[0] + "/" + ids[0] + "-" + ids[1] + "/" + ids[0] + "-" + ids[1] + "-" +
+                                          ids[2] + "-" + ids[3] + ".png")
+
+                if isfile(image_path):
+                    try:
+                        image = Image.open(image_path)
+                        self.labels.append((id, text))
+                    except Exception:
+                        pass
 
     def parse_xml_tree_word(self, root):
         root_dict = {}
