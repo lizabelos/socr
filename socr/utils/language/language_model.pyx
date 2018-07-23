@@ -53,7 +53,6 @@ cdef class LanguageModel:
             return "0123456789 "
 
         nextChars = str().join(self.tree.getNextChars(text.lower()))
-        # nextChars += nextChars.upper()
 
 
         # need to make a get alpha chars with lower probability
@@ -64,8 +63,7 @@ cdef class LanguageModel:
         #     nextChars += self.getNonWordChars()
         if text == '':
             nextChars += self.getNonWordChars()
-
-        if self.isWord(text):
+        elif self.isWord(text):
             nextChars += " "
 
         if bool(re.match('^[XVI]+$', text)):
@@ -76,7 +74,7 @@ cdef class LanguageModel:
         return nextChars
 
     cdef getWordChars(self):
-        return self.wordChars
+        return self.wordChars + "0123456789"
 
     cdef getNonWordChars(self):
         return self.nonWordChars

@@ -27,7 +27,7 @@ def interpolation(array, x, y):
            t * u * array[j + 1][i + 1] + t1 * u * array[j + 1][i]
 
 
-def connected_components(image):
+def connected_components(image, hist_min=0.5, hist_max=0.97):
     image = np.array(image)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
@@ -79,7 +79,7 @@ def connected_components(image):
 
     # thresh = filters.apply_hysteresis_threshold(np.array(image), 0.4, 0.99)
 
-    thresh = filters.apply_hysteresis_threshold(np.array(image), 0.5, 0.97)
+    thresh = filters.apply_hysteresis_threshold(np.array(image), hist_min, hist_max)
 
     thresh = (np.clip(thresh, 0, 1) * 255).astype(np.uint8)
 

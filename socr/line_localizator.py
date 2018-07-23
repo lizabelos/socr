@@ -1,6 +1,7 @@
 import argparse
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -161,7 +162,7 @@ class LineLocalizator:
         for line, pos in lines:
             show_numpy_image(line, invert_axes=True)
 
-    def extract(self, original_image, resized_image, with_images=True):
+    def extract(self, original_image, resized_image, with_images=True, hist_min=0.5, hist_max=0.97):
         """
         Extract all the line from the given image
 
@@ -185,7 +186,7 @@ class LineLocalizator:
 
         image = self.loss.process_labels(image)
         result = self.model(torch.autograd.Variable(image))[0]
-        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(), with_images)
+        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(), with_images, hist_min=hist_min, hist_max=hist_max)
 
         pillow_lines = [line for line, pos in lines]
         pos = [pos for line, pos in lines]
@@ -231,7 +232,7 @@ class LineLocalizator:
 
         return result
 
-    def evaluate(self, path):
+    def evaluate(self, path, hist_min=0.5, hist_max=0.97):
         """
         Evaluate the line localizator. Output all the results to the 'results' directory.
 
@@ -256,7 +257,7 @@ class LineLocalizator:
             percent = i * 100 // data_set.__len__()
             sys.stdout.write(str(percent) + "%... Processing \r")
 
-            lines, positions, _, _ = self.extract(image, resized, with_images=False)
+            lines, positions, _, _ = self.extract(image, resized, with_images=False, hist_min=hist_min, hist_max=hist_max)
 
             self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
 
@@ -272,6 +273,59 @@ class LineLocalizator:
                 print_warning("Can't find : '" + xml_path + "'")
 
             count = count + 1
+
+    def evaluate_hist(self, path):
+
+        with open("p.txt", "w") as pfile:
+            with open("r.txt", "w") as rfile:
+                with open("f1.txt", "w") as f1file:
+
+                    for i in range(0, 10 + 1):
+                        for j in range(i, 10 + 1):
+                            print("For " + "(" + str(i / 10) + "," + str(j / 10) + ")")
+                            subprocess.run(['rm', '-R', 'results'])
+                            self.evaluate(path, i / 10, j / 10)
+
+                            pipe = subprocess.Popen(["sh", "evaluate.sh"], stdout=subprocess.PIPE)
+                            texts = pipe.communicate()
+                            texts = ["" if text is None else text.decode() for text in texts]
+                            text = "\n".join(texts)
+
+                            results = re.findall("\d+\.\d+", text)
+
+                            p = results[0]
+                            r = results[1]
+                            f1 = results[2]
+
+                            print("P : " + p)
+
+                            pfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + p + ")")
+                            rfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + r + ")")
+                            f1file.write("(" + str(i / 10) + "," + str(j / 10) + "," + f1 + ")")
+
+                    for i in range(2, 6 + 1):
+                        for j in range(95, 98 + 1):
+                            print("For " + "(" + str(i / 10) + "," + str(j / 10) + ")")
+                            subprocess.run(['rm', '-R', 'results'])
+                            self.evaluate(path, i / 10, j / 100)
+
+                            pipe = subprocess.Popen(["sh","evaluate.sh"], stdout=subprocess.PIPE)
+                            texts = pipe.communicate()
+                            texts = ["" if text is None else text.decode() for text in texts]
+                            text = "\n".join(texts)
+
+                            print(texts)
+
+                            results = re.findall("\d+\.\d+", text)
+
+                            p = results[0]
+                            r = results[1]
+                            f1 = results[2]
+
+                            pfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + p + ")")
+                            rfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + r + ")")
+                            f1file.write("(" + str(i / 10) + "," + str(j / 100) + "," + f1 + ")")
+
 
     def callback(self):
         self.eval()
@@ -298,6 +352,7 @@ def main(sysarg):
     parser.add_argument('--model', type=str, default="dhSegment", help="Model name")
     parser.add_argument('--execute', type=str, default=None)
     parser.add_argument('--evaluate', type=str, default=None)
+    parser.add_argument('--evaluatehist', type=str, default=None)
     parser.add_argument('--generateandexecute', action='store_const', const=True, default=False)
     parser.add_argument('--test', action='store_const', const=True, default=False)
     parser.add_argument('--testgenerator', action='store_const', const=True, default=False)
@@ -321,6 +376,9 @@ def main(sysarg):
     elif args.evaluate is not None:
         line_recognizer.eval()
         line_recognizer.evaluate(args.evaluate)
+    elif args.evaluatehist is not None:
+        line_recognizer.eval()
+        line_recognizer.evaluate_hist(args.evaluatehist)
     elif args.test:
         line_recognizer.eval()
         line_recognizer.callback()

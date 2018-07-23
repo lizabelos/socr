@@ -17,8 +17,8 @@ cdef class BaselineDecoder:
     def __init__(self, height_factor):
         self.height_factor = height_factor
 
-    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3, bint brut_points=False):
-        cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0])
+    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3, double hist_min=0.5, double hist_max=0.97, bint brut_points=False):
+        cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0], hist_min=hist_min, hist_max=hist_max)
         cdef int num_components = np.max(components)
         cdef list results = []
 

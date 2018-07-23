@@ -63,6 +63,6 @@ class XHeightCCLoss(Loss):
             var = var.cuda()
         return var
 
-    def ytrue_to_lines(self, image, predicted, with_images=True):
-        return self.decoder.decode(image, predicted, with_images, degree=3, brut_points=True)
+    def ytrue_to_lines(self, image, predicted, with_images=True, hist_min=0.5, hist_max=0.97):
+        return self.decoder.decode(image, predicted, with_images, degree=3, brut_points=True, hist_min=hist_min, hist_max=hist_max)
 
