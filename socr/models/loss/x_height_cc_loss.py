@@ -23,15 +23,16 @@ class XHeightCCLoss(Loss):
         self.encoder = BaselineEncoder(self.height_factor)
 
     def forward(self, predicted, y_true):
-        return self.mse(predicted, y_true)
-        #
-        # batch_size = predicted.size()[0]
-        # width = predicted.size()[3]
-        # height = predicted.size()[2]
-        #
-        # predicted = predicted.permute(1, 0, 2, 3).contiguous()
-        # y_true = y_true.permute(3, 0, 1, 2).contiguous()
-        #
+
+        batch_size = predicted.size()[0]
+        width = predicted.size()[3]
+        height = predicted.size()[2]
+
+        predicted = predicted.permute(1, 0, 2, 3).contiguous()
+        y_true = y_true.permute(1, 0, 2, 3).contiguous()
+
+        return self.mse(predicted[0],y_true[0])
+
         # probs_error = (predicted[0] - y_true[0])
         # probs_error = probs_error * probs_error
         #

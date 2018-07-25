@@ -129,7 +129,7 @@ class dhSegment(ConvolutionalModel):
         return XHeightCCLoss()
 
     def adaptative_learning_rate(self, optimizer):
-        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 1.0)
 
     def collate(self, batch):
         data = [item[0] for item in batch]  # just form a list of tensor

@@ -142,6 +142,9 @@ class TextRecognizer:
         for i, data in enumerate(loader, 0):
             image, label = self.test_database.__getitem__(i)
 
+            if image.shape[2] < 8:
+                continue
+
             if is_cuda:
                 result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cuda()))
             else:

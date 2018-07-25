@@ -14,12 +14,15 @@ from PIL import Image, ImageDraw
 
 from socr.dataset import parse_datasets_configuration_file, DocumentGeneratorHelper
 from socr.dataset.set.file_dataset import FileDataset
+from socr.dataset.set.icdar_document_eval_set import ICDARDocumentEvalSet
 from socr.models import get_model_by_name
+from socr.utils.image.connected_components import save_connected_components
 from socr.utils.logging.logger import print_warning, print_normal
 from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
 from socr.utils.setup.download import download_resources
 from socr.utils.trainer.trainer import Trainer
-from socr.utils.image import show_numpy_image, image_pillow_to_numpy, image_numpy_to_pillow, mIoU
+from socr.utils.image import show_numpy_image, image_pillow_to_numpy, image_numpy_to_pillow, mIoU, \
+    image_numpy_to_pillow_bw
 
 
 class LineLocalizator:
@@ -53,7 +56,9 @@ class LineLocalizator:
         # Parse and load all the test datasets specified into datasets.cfg
         load_default_datasets_cfg_if_not_exist()
         self.database_helper = DocumentGeneratorHelper()
-        self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=False, testing=True, args={"loss":self.loss, "transform":False})
+        self.test_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=False,
+                                                               testing=True,
+                                                               args={"loss": self.loss, "transform": False})
         print_normal("Test database length : " + str(self.test_database.__len__()))
 
     def train(self, batch_size, overlr=None):
@@ -66,7 +71,8 @@ class LineLocalizator:
         if overlr is not None:
             self.set_lr(overlr)
 
-        train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True, testing=False, args={"loss": self.loss, "transform":True})
+        train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True,
+                                                           testing=False, args={"loss": self.loss, "transform": True})
         print_normal("Train database length : " + str(train_database.__len__()))
         self.trainer.train(train_database, batch_size=batch_size, callback=self.callback)
 
@@ -162,7 +168,7 @@ class LineLocalizator:
         for line, pos in lines:
             show_numpy_image(line, invert_axes=True)
 
-    def extract(self, original_image, resized_image, with_images=True, hist_min=0.5, hist_max=0.97):
+    def extract(self, original_image, resized_image, with_images=True, hist_min=0.5, hist_max=0.97, gt=None):
         """
         Extract all the line from the given image
 
@@ -186,7 +192,8 @@ class LineLocalizator:
 
         image = self.loss.process_labels(image)
         result = self.model(torch.autograd.Variable(image))[0]
-        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(), with_images, hist_min=hist_min, hist_max=hist_max)
+        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(),
+                                                     with_images, hist_min=hist_min, hist_max=hist_max)
 
         pillow_lines = [line for line, pos in lines]
         pos = [pos for line, pos in lines]
@@ -207,7 +214,8 @@ class LineLocalizator:
         for i in range(0, len(lines)):
             positions = list(lines[i])
             for i in range(0, len(positions) // 2 - 1):
-                image_drawer.line((positions[i * 2], positions[i * 2 + 1], positions[i * 2 + 2], positions[i * 2 + 3]), fill=(128, 0, 0), width=lwidth)
+                image_drawer.line((positions[i * 2], positions[i * 2 + 1], positions[i * 2 + 2], positions[i * 2 + 3]),
+                                  fill=(128, 0, 0), width=lwidth)
 
         return image
 
@@ -243,27 +251,32 @@ class LineLocalizator:
         if not os.path.exists("results"):
             os.makedirs("results")
 
-        data_set = FileDataset()
-        data_set.recursive_list(path)
-        data_set.sort()
+        data_set = ICDARDocumentEvalSet(path, self.loss)
 
         loader = torch.utils.data.DataLoader(data_set, batch_size=1, shuffle=False, num_workers=4)
 
         count = 0
 
         for i, data in enumerate(loader, 0):
-            resized, image, path = data
+            resized, image, path, label = data
 
             percent = i * 100 // data_set.__len__()
             sys.stdout.write(str(percent) + "%... Processing \r")
 
-            lines, positions, _, _ = self.extract(image, resized, with_images=False, hist_min=hist_min, hist_max=hist_max)
+            lines, positions, probsmap, components = self.extract(image, resized, with_images=False, hist_min=hist_min, hist_max=hist_max, gt=label)
 
             self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
 
+            save_connected_components(components, "results/" + str(count) + ".components.jpg")
+
+            image_numpy_to_pillow_bw(probsmap[0].cpu().detach().numpy()).save("results/" + str(count) + ".probs.jpg")
+            image_numpy_to_pillow_bw(label[0][0].cpu().detach().numpy()).save("results/" + str(count) + ".probs.gt.jpg")
+
+
             xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
             if not os.path.exists(xml_path):
-                xml_path = os.path.join(os.path.dirname(path[0]), "page/" + os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
+                xml_path = os.path.join(os.path.dirname(path[0]),
+                                        "page/" + os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
 
             if os.path.exists(xml_path):
                 shutil.copy2(xml_path, "results/" + str(count) + ".xml")
@@ -309,7 +322,7 @@ class LineLocalizator:
                             subprocess.run(['rm', '-R', 'results'])
                             self.evaluate(path, i / 10, j / 100)
 
-                            pipe = subprocess.Popen(["sh","evaluate.sh"], stdout=subprocess.PIPE)
+                            pipe = subprocess.Popen(["sh", "evaluate.sh"], stdout=subprocess.PIPE)
                             texts = pipe.communicate()
                             texts = ["" if text is None else text.decode() for text in texts]
                             text = "\n".join(texts)
@@ -326,6 +339,12 @@ class LineLocalizator:
                             rfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + r + ")")
                             f1file.write("(" + str(i / 10) + "," + str(j / 100) + "," + f1 + ")")
 
+    def run_transkribus(self):
+        pipe = subprocess.Popen(["sh", "evaluate.sh"], stdout=subprocess.PIPE)
+        texts = pipe.communicate()
+        texts = ["" if text is None else text.decode() for text in texts]
+        text = "\n".join(texts)
+        return text
 
     def callback(self):
         self.eval()
@@ -343,7 +362,41 @@ class LineLocalizator:
             if dict["for"] == "Document" and "test" in dict:
                 self.evaluate(dict["test"])
 
-        subprocess.run(['sh','evaluate.sh'])
+        result = self.run_transkribus()
+        lines = result.split("\n")
+        probs = [line.split(",") for line in lines]
+        probs = [[prob.replace(" ", "") for prob in problist] for problist in probs]
+
+        # new_probs = []
+        total = None
+
+        for i in range(0, len(probs)):
+            try:
+                id = probs[i][3].split(".")[0]
+                if id == "TOTAL":
+                    total = probs[i]
+            except Exception as e:
+                pass
+
+        print_normal("P : " + str(total[0]) + "; F : " + str(total[1]) + "; F1 : " + str(total[2]))
+
+        return total[2]
+
+        # for i in range(0, len(probs)):
+        #     try:
+        #         new_probs.append([float(probs[i][0]), float(probs[i][1]), float(probs[i][2]), probs[i][3], probs[i][4]])
+        #     except Exception as e:
+        #         pass
+        #
+        # new_probs.sort(key=lambda x: x[2])
+        #
+        # for i in range(0, len(new_probs)):
+        #     id = new_probs[i][3].split(".")[0]
+        #     if id != "TOTAL":
+        #         for ext in [".jpg", ".probs.jpg", ".probs.gt.jpg", ".components.jpg", ".txt", ".xml"]:
+        #             os.rename("results/" + id + ext, 'results/%.4f%s' % (new_probs[i][2], ext))
+        #     else:
+        #         print(new_probs[i])
 
 
 def main(sysarg):

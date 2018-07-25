@@ -30,12 +30,12 @@ def interpolation(array, x, y):
 def connected_components(image, hist_min=0.5, hist_max=0.97):
     image = np.array(image)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+    # kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
 
 
     # show_numpy_image(image, invert_axes=False)
     # image = cv2.erode(image, kernel, iterations=1)
-    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+    # image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
 
     # show_numpy_image(image, invert_axes=False)
 
@@ -79,7 +79,7 @@ def connected_components(image, hist_min=0.5, hist_max=0.97):
 
     # thresh = filters.apply_hysteresis_threshold(np.array(image), 0.4, 0.99)
 
-    thresh = filters.apply_hysteresis_threshold(np.array(image), hist_min, hist_max)
+    thresh = filters.apply_hysteresis_threshold(np.array(image), 0.5, 0.5)
 
     thresh = (np.clip(thresh, 0, 1) * 255).astype(np.uint8)
 
@@ -118,6 +118,7 @@ def show_connected_components(labels):
 
 def save_connected_components(labels, path):
     # Map component labels to hue val
+    labels = np.array(labels)
     label_hue = np.uint8(179 * labels / np.max(labels))
     blank_ch = 255 * np.ones_like(label_hue)
     labeled_img = cv2.merge([label_hue, blank_ch, blank_ch])

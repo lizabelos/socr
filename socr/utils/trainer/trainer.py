@@ -45,7 +45,9 @@ class Trainer:
             name = model.get_name()
 
         self.checkpoint_name = "checkpoints/" + name + ".pth.tar"
-        self.csv_name = "checkpoints/" + name + ".csv"
+        self.csv_name_acc = "checkpoints/" + name + ".acc.txt"
+        self.csv_name_lr = "checkpoints/" + name + ".lr.txt"
+        self.csv_name_loss = "checkpoints/" + name + ".loss.txt"
         self.adaptative_optimizer = model.adaptative_learning_rate(self.optimizer)
         self.epoch = 0
         self.clip_gradient = clip_gradient
@@ -123,14 +125,14 @@ class Trainer:
         else:
             loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4)
         try:
-            if os.path.exists(self.csv_name):
+            if os.path.exists(self.csv_name_acc):
                 append_write = 'a'
             else:
                 append_write = 'w'
 
-            with open(self.csv_name, append_write) as csv_file:
+            with open(self.csv_name_acc, append_write) as csv_acc, open(self.csv_name_loss, append_write) as csv_loss, open(self.csv_name_lr, append_write) as csv_lr:
                 while self.optimizer.state_dict()['param_groups'][0]['lr'] > 1e-7:
-                    self.do_one_epoch(loader, batch_size, csv_file)
+                    self.do_one_epoch(loader, batch_size)
                     if callback is not None:
                         try:
                             self.error = callback()
@@ -141,6 +143,7 @@ class Trainer:
                                 print_normal("Best score ! Saving !")
                                 self.best_error = self.error
                                 self.save()
+                    self.write_to_file(csv_loss, csv_acc, csv_lr)
 
             print_normal("Done training ! Saving...")
             self.save()
@@ -157,7 +160,7 @@ class Trainer:
                 if i == "no":
                     break
 
-    def do_one_epoch(self, data_loader, batch_size, csv_file):
+    def do_one_epoch(self, data_loader, batch_size):
         """
         Train for one epoch
 
@@ -221,14 +224,17 @@ class Trainer:
                 sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed / 60))
 
         self.epoch = self.epoch + 1
-        self.adaptative_optimizer.step()
-
-        epoch_s = str(self.epoch)
-        elapsed_s = str(self.elapsed).replace(".", ",")
-        ma_loss_s = str(self.moving_average).replace(".", ",")
-        lr_s = str(self.optimizer.state_dict()['param_groups'][0]['lr']).replace(".", ",")
-        error_s = "" if self.error is None else str(self.error).replace(".", ",")
-        csv_file.write(epoch_s + "\t" + elapsed_s + "\t" + ma_loss_s + "\t" + lr_s + "\t" + error_s + "\n")
+        # self.adaptative_optimizer.step()
 
         self.autosave()
         sys.stdout.write("\n")
+
+    def write_to_file(self, csv_loss, csv_acc, csv_lr):
+        epoch_s = str(self.epoch)
+        ma_loss_s = str(self.moving_average.moving_average())
+        error_s = "" if self.error is None else str(self.error)
+        lr_s = str(self.optimizer.state_dict()['param_groups'][0]['lr'])
+
+        csv_loss.write("(" + epoch_s + "," + ma_loss_s + ")")
+        csv_acc.write("(" + epoch_s + "," + error_s + ")")
+        csv_lr.write("(" + epoch_s + "," + lr_s + ")")

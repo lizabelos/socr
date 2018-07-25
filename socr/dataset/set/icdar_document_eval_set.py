@@ -17,15 +17,12 @@ from socr.utils.image import image_pillow_to_numpy
 from socr.utils.image.degrade import gauss_distort
 
 
-class ICDARDocumentSet(Dataset):
+class ICDARDocumentEvalSet(Dataset):
 
-    def __init__(self, helper, path, loss=None, transform=True):
+    def __init__(self, path, loss):
         self.loss = loss
-        self.helper = helper
         self.labels = []
-        self.document_generator = DocumentGenerator(helper)
         self.recursive_list(path)
-        self.transform = transform
 
     def recursive_list(self, path):
         for file_name in os.listdir(path):
@@ -63,14 +60,9 @@ class ICDARDocumentSet(Dataset):
                 region = self.parse_line(children)
                 if region is not None:
                     regions = regions + region
-                else:
-                    return None
 
-        if len(regions) == 0:
-            print("Warning : 0 len regions for " + image_filename)
-            regions = []
-
-        self.labels.append((image_fullpath, regions))
+        if len(regions) > 0:
+            self.labels.append((image_fullpath, regions))
 
     def parse_line(self, root):
         results = []
@@ -79,8 +71,6 @@ class ICDARDocumentSet(Dataset):
                 result = self.parse_region(children)
                 if result is not None:
                     results = results + result
-                else:
-                    return None
         return results
 
     def parse_region(self, root):
@@ -118,7 +108,6 @@ class ICDARDocumentSet(Dataset):
 
         return results
 
-
     def parse_coords(self, root):
         root_dict = {}
         for name, value in root.attrib.items():
@@ -152,24 +141,13 @@ class ICDARDocumentSet(Dataset):
     def __getitem__(self, index):
         image_path, regions = self.labels[index % len(self.labels)]
 
-        if os.path.isfile(image_path + ".resized.jpg"):
-            image = Image.open(image_path + ".resized.jpg").convert('RGB')
-            image_size = np.load(image_path + ".size.np.npy")
-            width = image_size[0]
-            height = image_size[1]
-            new_width, new_height = image.size
-        else:
-            image = Image.open(image_path).convert('RGB')
-            width, height = image.size
-            new_width = math.sqrt(6 * (10 ** 5) * width / height)
-            # new_width = new_width * uniform(0.8, 1.2)
-            new_width = int(new_width)
-            new_height = height * new_width // width
-            image = image.resize((new_width, new_height), Image.ANTIALIAS)
-            image.save(image_path + ".resized.jpg")
-            np.save(image_path + ".size.np.npy", np.array([width, height]))
-
-
+        image = Image.open(image_path).convert('RGB')
+        width, height = image.size
+        new_width = math.sqrt(6 * (10 ** 5) * width / height)
+        # new_width = new_width * uniform(0.8, 1.2)
+        new_width = int(new_width)
+        new_height = height * new_width // width
+        resized = image.resize((new_width, new_height), Image.ANTIALIAS)
 
         new_regions = []
         for region in regions:
@@ -187,8 +165,6 @@ class ICDARDocumentSet(Dataset):
             label = self.loss.document_to_ytrue(np.array([new_width, new_height], dtype='int32'),
                                             np.array(new_regions, dtype='int32'))
 
-        image = np.array(image, dtype='float') / 255.0
-
         # angle = randint(-45, 45)
         # label = rotate(label, angle, order=0)
         # image = rotate(image, angle, order=0)
@@ -196,18 +172,17 @@ class ICDARDocumentSet(Dataset):
         # image = np.swapaxes(image, 0, 2)
         # image = np.swapaxes(image, 1, 2)
 
-        # label = np.swapaxes(label, 0, 2)
-        # label = np.swapaxes(label, 1, 2)
+        label = np.swapaxes(label, 0, 2)
+        label = np.swapaxes(label, 1, 2)
 
         # if self.transform:
         #     image = self.helper.augment(image, distort=False)
 
-            # c = gauss_distort([image[0], image[1], image[2], label[0], label[1]])
-            # image = np.stack((c[0], c[1], c[2]), axis=0)
-            # label = np.stack((c[3], c[4]), axis=0)
+        # c = gauss_distort([image[0], image[1], image[2], label[0], label[1]])
+        # image = np.stack((c[0], c[1], c[2]), axis=0)
+        # label = np.stack((c[3], c[4]), axis=0)
 
-
-        return torch.from_numpy(image), torch.from_numpy(label)
+        return image_pillow_to_numpy(resized), image_pillow_to_numpy(image), image_path, label
 
     def __len__(self):
-        return len(self.labels) * 8
+        return len(self.labels)

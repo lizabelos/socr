@@ -1,11 +1,6 @@
-#cython: wraparound=False
-#cython: boundscheck=False
-#cython: cdivision=True
-
 import math
 
 import numpy as np
-cimport numpy as np
 
 from socr.utils.image.connected_components import connected_components
 
@@ -18,7 +13,7 @@ cdef class BaselineDecoder:
         self.height_factor = height_factor
 
     cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3, double hist_min=0.5, double hist_max=0.97, bint brut_points=False):
-        cdef np.ndarray[int, ndim=2] components = connected_components(predicted[0], hist_min=hist_min, hist_max=hist_max)
+        cdef int[:,:] components = connected_components(predicted[0], hist_min=hist_min, hist_max=hist_max)
         cdef int num_components = np.max(components)
         cdef list results = []
 
@@ -30,25 +25,40 @@ cdef class BaselineDecoder:
         return results, components
 
     cdef tuple process_components(self, double[:,:,:] image, float[:,:,:] prediction, int[:,:] components, int index, int degree=3, int line_height=64, int baseline_resolution=16, bint with_image=True, bint brut_points=False):
+        if prediction.shape[1] != components.shape[0] or prediction.shape[2] != components.shape[1]:
+            print(str(prediction.shape) + "!=" + str(components.shape))
+            raise AssertionError
+
+
         cdef list x_train = []
         cdef list y_data = []
 
         cdef int max_height = 10
 
+        cdef double[:] x_maxs = np.zeros((components.shape[1]))
+        cdef double[:] x_maxs_pos = np.zeros((components.shape[1]))
+
+        cdef int x
+        cdef int y
+
         for y in range(0, components.shape[0]):
             for x in range(0, components.shape[1]):
+
                 if components[y][x] == index:
                     x_train.append(x)
                     y_data.append(y)
                     max_height = int(max(max_height, prediction[1][y][x] / self.height_factor))
+
+                    x_maxs[x] = x_maxs[x] + (1 * y)
+                    x_maxs_pos[x] = x_maxs_pos[x] + 1
 
         if len(x_train) == 0:
             return None
 
         max_height = max_height * 2
 
-        cdef float min_x = min(x_train)
-        cdef float max_x = max(x_train)
+        cdef int min_x = min(x_train)
+        cdef int max_x = max(x_train)
         cdef float line_components_width = max_x - min_x
         cdef int line_components_height = int(max_height)
         cdef int line_width = int(line_components_width * line_height / line_components_height)
@@ -73,15 +83,20 @@ cdef class BaselineDecoder:
 
         cdef list baseline_points = []
 
-        if not brut_points:
+        if brut_points:
             for i in range(0, baseline_resolution + 1):
                 x = min_x * (i / baseline_resolution) + max_x * ((baseline_resolution - i) / baseline_resolution)
                 baseline_points.append(int(x * image.shape[2] / prediction.shape[2]))
                 baseline_points.append(int(ffit(x) * image.shape[1] / prediction.shape[1]))
         else:
-            for i in range(9, len(x_train)):
-                baseline_points.append(int(x_train[i] * image.shape[2] / prediction.shape[2]))
-                baseline_points.append(int(y_data[i] * image.shape[1] / prediction.shape[1]))
+            for x in range(min_x, max_x):
+               if x_maxs_pos[x] != 0:
+                   y = int(x_maxs[x] / x_maxs_pos[x])
+                   baseline_points.append(x * image.shape[2] / prediction.shape[2])
+                   baseline_points.append(y * image.shape[1] / prediction.shape[1])
+            # for i in range(9, len(x_train)):
+            #     baseline_points.append(int(x_train[i] * image.shape[2] / prediction.shape[2]))
+            #     baseline_points.append(int(y_data[i] * image.shape[1] / prediction.shape[1]))
 
         line = None
 
