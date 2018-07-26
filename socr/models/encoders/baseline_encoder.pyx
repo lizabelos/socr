@@ -4,9 +4,11 @@ import numpy as np
 cdef class BaselineEncoder:
 
     cdef float height_factor
+    cdef int thicknesses
 
-    def __init__(self, float height_factor):
+    def __init__(self, float height_factor, int thicknesses):
         self.height_factor = height_factor
+        self.thicknesses = thicknesses
 
     cdef plot(self, float[:,:,:] y_true, int x, int y, int height):
         if x >= y_true.shape[1] or y >= y_true.shape[0] or x < 0 or y < 0:
@@ -16,7 +18,7 @@ cdef class BaselineEncoder:
         y_true[y][x][1] = height * self.height_factor
 
     cdef plot_radius(self, float[:,:,:] y_true, int x, int y, int height):
-        cdef int radius = 2
+        cdef int radius = self.thicknesses
         for i in range(-radius, radius + 1):
             for j in range(-radius, radius + 1):
                 self.plot(y_true, x + i, y + j, height)

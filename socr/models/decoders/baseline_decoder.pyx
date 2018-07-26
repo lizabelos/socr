@@ -8,12 +8,20 @@ from socr.utils.image.connected_components import connected_components
 cdef class BaselineDecoder:
 
     cdef float height_factor
+    cdef float hysteresis_minimum
+    cdef float hysteresis_maximum
 
-    def __init__(self, height_factor):
+    def __init__(self, height_factor, hysteresis_minimum, hysteresis_maximum):
         self.height_factor = height_factor
+        self.hysteresis_minimum = hysteresis_minimum
+        self.hysteresis_maximum = hysteresis_maximum
 
-    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3, double hist_min=0.5, double hist_max=0.97, bint brut_points=False):
-        cdef int[:,:] components = connected_components(predicted[0], hist_min=hist_min, hist_max=hist_max)
+    cpdef set_hysteresis(self, hysteresis_minimum, hysteresis_maximum):
+        self.hysteresis_minimum = hysteresis_minimum
+        self.hysteresis_maximum = hysteresis_maximum
+
+    cpdef tuple decode(self, double[:,:,:] image, float[:,:,:] predicted, bint with_images=True, int degree=3, bint brut_points=False):
+        cdef int[:,:] components = connected_components(predicted[0], hist_min=self.hysteresis_minimum, hist_max=self.hysteresis_maximum)
         cdef int num_components = np.max(components)
         cdef list results = []
 

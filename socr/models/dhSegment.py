@@ -15,8 +15,15 @@ from socr.utils.logging.logger import print_normal
 
 class dhSegment(ConvolutionalModel):
 
-    def __init__(self):
+    def __init__(self, loss_type="mse", hysteresis_minimum=0.5, hysteresis_maximum=0.5, thicknesses=2, height_importance=1.0, exponential_decay=1.0):
         super(dhSegment, self).__init__()
+
+        self.loss_type = loss_type
+        self.hysteresis_minimum = hysteresis_minimum
+        self.hysteresis_maximum = hysteresis_maximum
+        self.thicknesses = thicknesses
+        self.height_importance = height_importance
+        self.exponential_decay = exponential_decay
 
         self.inplanes = 64
 
@@ -43,7 +50,13 @@ class dhSegment(ConvolutionalModel):
         self.up4 = PSPUpsample(128 + 3, 64, bn=True)
 
         self.last_conv_prob =  torch.nn.Conv2d(64, 2, kernel_size=(1, 1), dilation=(1, 1), padding=0, bias=True)
-        self.last_act_prob = torch.nn.ReLU(inplace=True)
+
+        if loss_type == "mse":
+            self.last_act_prob = torch.nn.ReLU(inplace=True)
+        elif loss_type == "bce":
+            self.last_act_prob = torch.nn.Sigmoid()
+        else:
+            raise AssertionError
 
         # self.thresh = torch.nn.Parameter(torch.Tensor([0.0]), requires_grad=False)
 
@@ -126,10 +139,10 @@ class dhSegment(ConvolutionalModel):
         return None
 
     def create_loss(self):
-        return XHeightCCLoss()
+        return XHeightCCLoss(self.loss_type, self.hysteresis_minimum, self.hysteresis_maximum, self.thicknesses, self.height_importance)
 
     def adaptative_learning_rate(self, optimizer):
-        return torch.optim.lr_scheduler.ExponentialLR(optimizer, 1.0)
+        return torch.optim.lr_scheduler.ExponentialLR(optimizer, self.exponential_decay)
 
     def collate(self, batch):
         data = [item[0] for item in batch]  # just form a list of tensor

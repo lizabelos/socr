@@ -37,10 +37,17 @@ class LineLocalizator:
         :param model_name: The models name to use
         :param lr: The intial learning rate to use, if the training has not started yet
         """
+        self.settings = ConfigParser()
+        self.settings.read("settings.cfg")
 
         # Load the models, the loss, the optimizer and create a trainer from these three. The Trainer class will
         # automatically restore the weight if it exist.
-        self.model = get_model_by_name(model_name)()
+        self.model = get_model_by_name(model_name)(self.settings.get("line", "loss_type"),
+                                                   float(self.settings.get("line", "hysteresis_minimum")),
+                                                   float(self.settings.get("line", "hysteresis_maximum")),
+                                                   int(self.settings.get("line", "thicknesses")),
+                                                   float(self.settings.get("line", "height_importance")),
+                                                   float(self.settings.get("line", "exponential_decay")))
         self.loss = self.model.create_loss()
         if is_cuda:
             self.model = self.model.cuda()
@@ -50,7 +57,7 @@ class LineLocalizator:
             self.model = self.model.cpu()
             self.loss = self.loss.cpu()
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=0.000001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, weight_decay=float(self.settings.get("line", "weight_decay")))
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
         # Parse and load all the test datasets specified into datasets.cfg
@@ -168,7 +175,7 @@ class LineLocalizator:
         for line, pos in lines:
             show_numpy_image(line, invert_axes=True)
 
-    def extract(self, original_image, resized_image, with_images=True, hist_min=0.5, hist_max=0.97, gt=None):
+    def extract(self, original_image, resized_image, with_images=True):
         """
         Extract all the line from the given image
 
@@ -192,8 +199,7 @@ class LineLocalizator:
 
         image = self.loss.process_labels(image)
         result = self.model(torch.autograd.Variable(image))[0]
-        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(),
-                                                     with_images, hist_min=hist_min, hist_max=hist_max)
+        lines, components = self.loss.ytrue_to_lines(original_image.cpu().numpy()[0], result.cpu().detach().numpy(), with_images)
 
         pillow_lines = [line for line, pos in lines]
         pos = [pos for line, pos in lines]
@@ -240,7 +246,7 @@ class LineLocalizator:
 
         return result
 
-    def evaluate(self, path, hist_min=0.5, hist_max=0.97):
+    def evaluate(self, path):
         """
         Evaluate the line localizator. Output all the results to the 'results' directory.
 
@@ -263,15 +269,16 @@ class LineLocalizator:
             percent = i * 100 // data_set.__len__()
             sys.stdout.write(str(percent) + "%... Processing \r")
 
-            lines, positions, probsmap, components = self.extract(image, resized, with_images=False, hist_min=hist_min, hist_max=hist_max, gt=label)
+            lines, positions, probsmap, components = self.extract(image, resized, with_images=False)
 
             self.output_image_bloc(image, positions).save("results/" + str(count) + ".jpg", "JPEG")
 
             save_connected_components(components, "results/" + str(count) + ".components.jpg")
 
             image_numpy_to_pillow_bw(probsmap[0].cpu().detach().numpy()).save("results/" + str(count) + ".probs.jpg")
-            image_numpy_to_pillow_bw(label[0][0].cpu().detach().numpy()).save("results/" + str(count) + ".probs.gt.jpg")
+            del probsmap
 
+            image_numpy_to_pillow_bw(label[0][0].cpu().detach().numpy()).save("results/" + str(count) + ".probs.gt.jpg")
 
             xml_path = os.path.join(os.path.dirname(path[0]), os.path.splitext(os.path.basename(path[0]))[0] + ".xml")
             if not os.path.exists(xml_path):
@@ -297,18 +304,28 @@ class LineLocalizator:
                         for j in range(i, 10 + 1):
                             print("For " + "(" + str(i / 10) + "," + str(j / 10) + ")")
                             subprocess.run(['rm', '-R', 'results'])
-                            self.evaluate(path, i / 10, j / 10)
+                            self.loss.decoder.set_hysteresis(i / 10, j / 10)
 
-                            pipe = subprocess.Popen(["sh", "evaluate.sh"], stdout=subprocess.PIPE)
-                            texts = pipe.communicate()
-                            texts = ["" if text is None else text.decode() for text in texts]
-                            text = "\n".join(texts)
+                            self.evaluate(path)
+                            result = self.run_transkribus()
+                            lines = result.split("\n")
+                            probs = [line.split(",") for line in lines]
+                            probs = [[prob.replace(" ", "") for prob in problist] for problist in probs]
 
-                            results = re.findall("\d+\.\d+", text)
+                            # new_probs = []
+                            total = None
 
-                            p = results[0]
-                            r = results[1]
-                            f1 = results[2]
+                            for i in range(0, len(probs)):
+                                try:
+                                    id = probs[i][3].split(".")[0]
+                                    if id == "TOTAL":
+                                        total = probs[i]
+                                except Exception as e:
+                                    pass
+
+                            p = total[0]
+                            r = total[1]
+                            f1 = total[2]
 
                             print("P : " + p)
 
@@ -320,20 +337,29 @@ class LineLocalizator:
                         for j in range(95, 98 + 1):
                             print("For " + "(" + str(i / 10) + "," + str(j / 10) + ")")
                             subprocess.run(['rm', '-R', 'results'])
-                            self.evaluate(path, i / 10, j / 100)
+                            self.loss.decoder.set_hysteresis(i / 10, j / 10)
 
-                            pipe = subprocess.Popen(["sh", "evaluate.sh"], stdout=subprocess.PIPE)
-                            texts = pipe.communicate()
-                            texts = ["" if text is None else text.decode() for text in texts]
-                            text = "\n".join(texts)
+                            self.evaluate(path)
+                            result = self.run_transkribus()
+                            lines = result.split("\n")
+                            probs = [line.split(",") for line in lines]
+                            probs = [[prob.replace(" ", "") for prob in problist] for problist in probs]
 
-                            print(texts)
+                            # new_probs = []
+                            total = None
 
-                            results = re.findall("\d+\.\d+", text)
+                            for i in range(0, len(probs)):
+                                try:
+                                    id = probs[i][3].split(".")[0]
+                                    if id == "TOTAL":
+                                        total = probs[i]
+                                except Exception as e:
+                                    pass
 
-                            p = results[0]
-                            r = results[1]
-                            f1 = results[2]
+
+                            p = total[0]
+                            r = total[1]
+                            f1 = total[2]
 
                             pfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + p + ")")
                             rfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + r + ")")
@@ -367,7 +393,7 @@ class LineLocalizator:
         probs = [line.split(",") for line in lines]
         probs = [[prob.replace(" ", "") for prob in problist] for problist in probs]
 
-        # new_probs = []
+        new_probs = []
         total = None
 
         for i in range(0, len(probs)):
@@ -380,23 +406,23 @@ class LineLocalizator:
 
         print_normal("P : " + str(total[0]) + "; F : " + str(total[1]) + "; F1 : " + str(total[2]))
 
-        return total[2]
+        for i in range(0, len(probs)):
+            try:
+                new_probs.append([float(probs[i][0]), float(probs[i][1]), float(probs[i][2]), probs[i][3], probs[i][4]])
+            except Exception as e:
+                pass
 
-        # for i in range(0, len(probs)):
-        #     try:
-        #         new_probs.append([float(probs[i][0]), float(probs[i][1]), float(probs[i][2]), probs[i][3], probs[i][4]])
-        #     except Exception as e:
-        #         pass
-        #
-        # new_probs.sort(key=lambda x: x[2])
-        #
-        # for i in range(0, len(new_probs)):
-        #     id = new_probs[i][3].split(".")[0]
-        #     if id != "TOTAL":
-        #         for ext in [".jpg", ".probs.jpg", ".probs.gt.jpg", ".components.jpg", ".txt", ".xml"]:
-        #             os.rename("results/" + id + ext, 'results/%.4f%s' % (new_probs[i][2], ext))
-        #     else:
-        #         print(new_probs[i])
+        new_probs.sort(key=lambda x: x[2])
+
+        for i in range(0, len(new_probs)):
+            id = new_probs[i][3].split(".")[0]
+            if id != "TOTAL":
+                for ext in [".jpg", ".probs.jpg", ".probs.gt.jpg", ".components.jpg", ".txt", ".xml"]:
+                    os.rename("results/" + id + ext, 'results/%.4f%s' % (new_probs[i][2], ext))
+            else:
+                print(new_probs[i])
+
+        return total[2]
 
 
 def main(sysarg):

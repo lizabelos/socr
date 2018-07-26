@@ -44,6 +44,14 @@ class InstallRequirements(distutils.cmd.Command):
             [sys.executable, '-m', 'conda', 'install', '-y', 'opencv'])
         assert res.returncode == 0, "Error"
 
+        res = subprocess.run(
+            [sys.executable, '-m', 'conda', 'install', '-y', 'opencv'])
+        assert res.returncode == 0, "Error"
+
+        res = subprocess.run(
+            [sys.executable, '-m', 'conda', 'install', '-y', '-c', 'conda-forge', 'scikit-image'])
+        assert res.returncode == 0, "Error"
+
         res = subprocess.run([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
         assert res.returncode == 0, "Error"
 
