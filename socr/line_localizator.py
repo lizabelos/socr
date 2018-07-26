@@ -315,11 +315,11 @@ class LineLocalizator:
                             # new_probs = []
                             total = None
 
-                            for i in range(0, len(probs)):
+                            for k in range(0, len(probs)):
                                 try:
-                                    id = probs[i][3].split(".")[0]
+                                    id = probs[k][3].split(".")[0]
                                     if id == "TOTAL":
-                                        total = probs[i]
+                                        total = probs[k]
                                 except Exception as e:
                                     pass
 
@@ -348,11 +348,11 @@ class LineLocalizator:
                             # new_probs = []
                             total = None
 
-                            for i in range(0, len(probs)):
+                            for k in range(0, len(probs)):
                                 try:
-                                    id = probs[i][3].split(".")[0]
+                                    id = probs[k][3].split(".")[0]
                                     if id == "TOTAL":
-                                        total = probs[i]
+                                        total = probs[k]
                                 except Exception as e:
                                     pass
 
