@@ -259,7 +259,7 @@ class LineLocalizator:
 
         data_set = ICDARDocumentEvalSet(path, self.loss)
 
-        loader = torch.utils.data.DataLoader(data_set, batch_size=1, shuffle=False, num_workers=4)
+        loader = torch.utils.data.DataLoader(data_set, batch_size=1, shuffle=False, num_workers=1)
 
         count = 0
 
