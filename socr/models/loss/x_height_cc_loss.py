@@ -18,10 +18,13 @@ class XHeightCCLoss(Loss):
         :param s: grid division, assuming we have only 1 bounding box per cell
         """
         super().__init__()
+
+        self.add_activation = None
         if loss_type == "mse":
+            self.add_activation = torch.nn.Sigmoid()
             self.mse = torch.nn.MSELoss()
         elif loss_type == "bce":
-            self.mse = torch.nn.BCELoss()
+            self.mse = torch.nn.BCEWithLogitsLoss()
         else:
             raise AssertionError
         self.mseh = torch.nn.MSELoss()
@@ -36,6 +39,9 @@ class XHeightCCLoss(Loss):
         self.encoder = BaselineEncoder(self.height_factor, self.thicknesses)
 
     def forward(self, predicted, y_true):
+        if self.add_activation is not None:
+            predicted = self.add_activation(predicted)
+
         predicted = predicted.permute(1, 0, 2, 3).contiguous()
         y_true = y_true.permute(1, 0, 2, 3).contiguous()
 

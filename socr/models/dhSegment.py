@@ -50,13 +50,10 @@ class dhSegment(ConvolutionalModel):
         self.up4 = PSPUpsample(128 + 3, 64, bn=True)
 
         self.last_conv_prob =  torch.nn.Conv2d(64, 2, kernel_size=(1, 1), dilation=(1, 1), padding=0, bias=True)
+        self.last_h_prob = torch.nn.ReLU(inplace=True)
 
-        if loss_type == "mse":
-            self.last_act_prob = torch.nn.ReLU(inplace=True)
-        elif loss_type == "bce":
-            self.last_act_prob = torch.nn.Sigmoid()
-        else:
-            raise AssertionError
+        self.last_act_prob = torch.nn.Sigmoid()
+
 
         # self.thresh = torch.nn.Parameter(torch.Tensor([0.0]), requires_grad=False)
 
@@ -125,7 +122,9 @@ class dhSegment(ConvolutionalModel):
         x_1 = self.up4(x_2, addition=x_1)
 
         x_prob = self.last_conv_prob(x_1)
-        x_prob = self.last_act_prob(x_prob)
+
+        if not self.training:
+            x_prob = self.last_act_prob(x_prob)
 
         return x_prob
 

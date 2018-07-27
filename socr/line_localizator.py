@@ -1,7 +1,6 @@
 import argparse
 import math
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -13,7 +12,6 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from socr.dataset import parse_datasets_configuration_file, DocumentGeneratorHelper
-from socr.dataset.set.file_dataset import FileDataset
 from socr.dataset.set.icdar_document_eval_set import ICDARDocumentEvalSet
 from socr.models import get_model_by_name
 from socr.utils.image.connected_components import save_connected_components
@@ -323,21 +321,19 @@ class LineLocalizator:
                                 except Exception as e:
                                     pass
 
-                            p = total[0]
-                            r = total[1]
-                            f1 = total[2]
+                            p = float(total[0])
+                            r = float(total[1])
+                            f1 = float(total[2])
 
-                            print("P : " + p)
+                            pfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + "%.3f" % (p) + ")")
+                            rfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + "%.3f" % (r) + ")")
+                            f1file.write("(" + str(i / 10) + "," + str(j / 10) + "," + "%.3f" % (f1) + ")")
 
-                            pfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + p + ")")
-                            rfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + r + ")")
-                            f1file.write("(" + str(i / 10) + "," + str(j / 10) + "," + f1 + ")")
-
-                    for i in range(2, 6 + 1):
-                        for j in range(95, 98 + 1):
+                    for i in range(3, 6 + 1):
+                        for j in range(75, 95):
                             print("For " + "(" + str(i / 10) + "," + str(j / 10) + ")")
                             subprocess.run(['rm', '-R', 'results'])
-                            self.loss.decoder.set_hysteresis(i / 10, j / 10)
+                            self.loss.decoder.set_hysteresis(i / 10, j / 100)
 
                             self.evaluate(path)
                             result = self.run_transkribus()
@@ -357,13 +353,13 @@ class LineLocalizator:
                                     pass
 
 
-                            p = total[0]
-                            r = total[1]
-                            f1 = total[2]
+                            p = float(total[0])
+                            r = float(total[1])
+                            f1 = float(total[2])
 
-                            pfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + p + ")")
-                            rfile.write("(" + str(i / 10) + "," + str(j / 100) + "," + r + ")")
-                            f1file.write("(" + str(i / 10) + "," + str(j / 100) + "," + f1 + ")")
+                            pfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + "%.3f" % (p) + ")")
+                            rfile.write("(" + str(i / 10) + "," + str(j / 10) + "," + "%.3f" % (r) + ")")
+                            f1file.write("(" + str(i / 10) + "," + str(j / 10) + "," + "%.3f" % (f1) + ")")
 
     def run_transkribus(self):
         pipe = subprocess.Popen(["sh", "evaluate.sh"], stdout=subprocess.PIPE)
