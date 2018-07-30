@@ -54,9 +54,6 @@ class dhSegment(ConvolutionalModel):
 
         self.last_act_prob = torch.nn.Sigmoid()
 
-
-        # self.thresh = torch.nn.Parameter(torch.Tensor([0.0]), requires_grad=False)
-
         print_normal("Applying xavier initialization...")
         self.apply(self.weights_init)
 
@@ -122,9 +119,7 @@ class dhSegment(ConvolutionalModel):
         x_1 = self.up4(x_2, addition=x_1)
 
         x_prob = self.last_conv_prob(x_1)
-
-        if not self.training:
-            x_prob = self.last_act_prob(x_prob)
+        x_prob = self.last_act_prob(x_prob)
 
         return x_prob
 
@@ -141,6 +136,7 @@ class dhSegment(ConvolutionalModel):
         return XHeightCCLoss(self.loss_type, self.hysteresis_minimum, self.hysteresis_maximum, self.thicknesses, self.height_importance)
 
     def adaptative_learning_rate(self, optimizer):
+        print_normal("Using a exponential decay of " + str(self.exponential_decay))
         return torch.optim.lr_scheduler.ExponentialLR(optimizer, self.exponential_decay)
 
     def collate(self, batch):

@@ -3,7 +3,7 @@ import numpy as np
 from skimage import filters
 
 
-def connected_components(image, hist_min=0.5, hist_max=0.97):
+def connected_components(image, hist_min, hist_max):
     image = np.array(image)
 
     thresh = filters.apply_hysteresis_threshold(np.array(image), hist_min, hist_max)

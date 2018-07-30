@@ -34,8 +34,10 @@ class Trainer:
 
         is_cuda = next(model.parameters()).is_cuda
         if is_cuda:
+            print_normal("Using GPU Data Parallel")
             self.model = torch.nn.DataParallel(model)
         else:
+            print_warning("Using CPU")
             self.model = CPUParallel(model)
         self.loss = loss
         self.optimizer = optimizer
@@ -134,10 +136,8 @@ class Trainer:
                 while self.optimizer.state_dict()['param_groups'][0]['lr'] > 1e-7:
                     self.do_one_epoch(loader, batch_size)
                     if callback is not None:
-                        try:
-                            self.error = callback()
-                        except Exception as e:
-                            print_error("Callback error : " + str(e))
+                        self.error = callback()
+
                         if self.error is not None:
                             if self.best_error is None or self.error < self.best_error:
                                 print_normal("Best score ! Saving !")

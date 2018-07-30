@@ -19,6 +19,8 @@ cdef class BaselineEncoder:
 
     cdef plot_radius(self, float[:,:,:] y_true, int x, int y, int height):
         cdef int radius = self.thicknesses
+        if radius == 0:
+            radius = height // 2
         for i in range(-radius, radius + 1):
             for j in range(-radius, radius + 1):
                 self.plot(y_true, x + i, y + j, height)

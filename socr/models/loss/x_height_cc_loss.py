@@ -5,6 +5,7 @@ from socr.models.decoders.baseline_decoder import BaselineDecoder
 from socr.models.encoders.baseline_encoder import BaselineEncoder
 from socr.utils.image import show_numpy_image
 from socr.utils.image.connected_components import show_connected_components, connected_components
+from socr.utils.logging.logger import print_normal
 from . import Loss
 
 
@@ -21,10 +22,12 @@ class XHeightCCLoss(Loss):
 
         self.add_activation = None
         if loss_type == "mse":
-            self.add_activation = torch.nn.Sigmoid()
+            print_normal("Using MSE Loss with Hysteresis=(" + str(hysteresis_minimum) + "," + str(hysteresis_maximum) + "), thicknesses=" + str(thicknesses) + ", height_importance=" + str(height_importance))
             self.mse = torch.nn.MSELoss()
         elif loss_type == "bce":
-            self.mse = torch.nn.BCEWithLogitsLoss()
+            print_normal("Using Binary Cross Entropy Loss Hysteresis=(" + str(hysteresis_minimum) + "," + str(hysteresis_maximum) + "), thicknesses=" + str(thicknesses) + ", height_importance=" + str(height_importance))
+            self.mse = torch.nn.BCELoss()
+            # self.mse = torch.nn.BCEWithLogitsLoss()
         else:
             raise AssertionError
         self.mseh = torch.nn.MSELoss()
@@ -39,13 +42,14 @@ class XHeightCCLoss(Loss):
         self.encoder = BaselineEncoder(self.height_factor, self.thicknesses)
 
     def forward(self, predicted, y_true):
-        if self.add_activation is not None:
-            predicted = self.add_activation(predicted)
-
         predicted = predicted.permute(1, 0, 2, 3).contiguous()
         y_true = y_true.permute(1, 0, 2, 3).contiguous()
 
-        return self.mse(predicted[0], y_true[0]) + (self.height_importance * self.mseh(predicted[1], y_true[1]))
+        if self.height_importance == 0:
+            return self.mse(predicted[0], y_true[0])
+        else:
+            raise NotImplementedError()
+            # return self.mse(predicted[0], y_true[0]) + (self.height_importance * self.mseh(predicted[1], y_true[1]))
 
     def document_to_ytrue(self, image_size, base_lines):
         return self.encoder.encode(image_size, base_lines)
