@@ -1,15 +1,10 @@
-import copy
-from random import randint
-
 import torch
 import torch.utils.model_zoo as model_zoo
-from torch.autograd import Variable
 from torch.nn import Parameter
 
 from socr.models.convolutional_model import ConvolutionalModel
 from socr.models.loss.x_height_cc_loss import XHeightCCLoss
-from socr.nn.modules.binarize import Binarize
-from socr.nn.modules.resnet import PSPUpsample, BasicBlock, Bottleneck
+from socr.nn.modules.resnet import PSPUpsample, Bottleneck
 from socr.utils.logging.logger import print_normal
 
 
@@ -138,52 +133,3 @@ class dhSegment(ConvolutionalModel):
     def adaptative_learning_rate(self, optimizer):
         print_normal("Using a exponential decay of " + str(self.exponential_decay))
         return torch.optim.lr_scheduler.ExponentialLR(optimizer, self.exponential_decay)
-
-    def collate(self, batch):
-        data = [item[0] for item in batch]  # just form a list of tensor
-        label = [item[1] for item in batch]
-
-        min_width = min([d.size()[1] for d in data])
-        min_height = min([d.size()[0] for d in data])
-
-        min_width = min(min_width, 300)
-        min_height = min(min_height, 300)
-
-        new_data = []
-        new_label = []
-
-        for i in range(0, len(data)):
-            d = data[i]
-
-            crop_x = randint(0, d.size()[1] - min_width)
-            crop_y = randint(0, d.size()[0] - min_height)
-            # d = torch.transpose(d, 0, 2)
-            # d = torch.transpose(d, 0, 1)
-            d = d[crop_y:crop_y + min_height, crop_x:crop_x + min_width]
-            d = torch.transpose(d, 0, 2)
-            d = torch.transpose(d, 1, 2)
-            new_data.append(d)
-
-            d = label[i]
-
-            # d = torch.transpose(d, 0, 2)
-            # d = torch.transpose(d, 0, 1)
-            d = d[crop_y:crop_y + min_height, crop_x:crop_x + min_width]
-            d = torch.transpose(d, 0, 2)
-            d = torch.transpose(d, 1, 2)
-            new_label.append(d)
-
-        data = torch.stack(new_data)
-        label = torch.stack(new_label)
-
-
-        # max_width = max([d.size()[2] for d in data])
-        # max_height = max([d.size()[1] for d in data])
-        #
-        # data = [torch.nn.functional.pad(d, (0, max_width - d.size()[2], 0, max_height - d.size()[1])) for d in data]
-        # data = torch.stack(data)
-        #
-        # label = [torch.nn.functional.pad(d, (0, max_width - d.size()[2], 0, max_height - d.size()[1])) for d in label]
-        # label = torch.stack(label)
-
-        return [data, label]

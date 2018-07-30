@@ -1,4 +1,5 @@
-import numpy as np
+from random import randint
+
 import torch
 
 from socr.models.decoders.baseline_decoder import BaselineDecoder
@@ -68,3 +69,39 @@ class XHeightCCLoss(Loss):
 
     def ytrue_to_lines(self, image, predicted, with_images=True):
         return self.decoder.decode(image, predicted, with_images, degree=3, brut_points=True)
+
+    def collate(self, batch):
+        data = [item[0] for item in batch]  # just form a list of tensor
+        label = [item[1] for item in batch]
+
+        min_width = min([d.size()[1] for d in data])
+        min_height = min([d.size()[0] for d in data])
+
+        min_width = min(min_width, 300)
+        min_height = min(min_height, 300)
+
+        new_data = []
+        new_label = []
+
+        for i in range(0, len(data)):
+            d = data[i]
+
+            crop_x = randint(0, d.size()[1] - min_width)
+            crop_y = randint(0, d.size()[0] - min_height)
+
+            d = d[crop_y:crop_y + min_height, crop_x:crop_x + min_width]
+            d = torch.transpose(d, 0, 2)
+            d = torch.transpose(d, 1, 2)
+            new_data.append(d)
+
+            d = label[i]
+
+            d = d[crop_y:crop_y + min_height, crop_x:crop_x + min_width]
+            d = torch.transpose(d, 0, 2)
+            d = torch.transpose(d, 1, 2)
+            new_label.append(d)
+
+        data = torch.stack(new_data)
+        label = torch.stack(new_label)
+
+        return [data, label]

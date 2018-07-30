@@ -77,13 +77,3 @@ class resSru(ConvolutionalModel):
     def adaptative_learning_rate(self, optimizer):
         return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)
         # return torch.optim.lr_scheduler.StepLR(optimizer, step_size=40, gamma=0.1)
-
-    def collate(self, batch):
-        data = [item[0] for item in batch]  # just form a list of tensor
-        max_width = max([d.size()[2] for d in data])
-
-        data = [torch.nn.functional.pad(d, (0, max_width - d.size()[2], 0, 0)) for d in data]
-        data = torch.stack(data)
-
-        target = [item[1] for item in batch]
-        return [data, target]

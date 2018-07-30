@@ -122,7 +122,7 @@ class Trainer:
         """
         self.moving_average = MovingAverage(max(data_set.__len__() // batch_size, 1024))
 
-        if hasattr(self.original_model, "collate"):
+        if hasattr(self.loss, "collate"):
             loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=self.original_model.collate)
         else:
             loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4)
