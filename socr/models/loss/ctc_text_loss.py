@@ -69,4 +69,6 @@ class CTCTextLoss(Loss):
     def convert_to_string(self, tokens, vocab, seq_len):
         return ''.join([vocab[x] for x in tokens[0:seq_len]])
 
+    def preprocess_label(self, text, width):
+        return text
 

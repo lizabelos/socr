@@ -1,22 +1,21 @@
 import torch
 import numpy as np
 
+from socr.models.loss import Loss
 
-class BiCTC:
 
-    def __init__(self):
+class BiCTC(Loss):
+
+    def __init__(self, labels):
+        super().__init__()
+        self.labels = labels
         self.nll = torch.nn.NLLLoss()
 
     def forward(self, output, label_matrix):
         batch_size = output.size()[0]
-        num_path = label_matrix.size()[0]
+        num_path = label_matrix.size()[1]
 
-        # TODO : Duplicate label_matrix batch_size times
-        # TODO : Duplicate output num_path times
-        # TODO : So we want batch_size x num_path x num_label x width
-
-        label_matrix = torch.stack([label_matrix] * batch_size)
-        output = torch.stack([output] * num_path).transpose(0, 1)
+        output = torch.stack([output] * num_path).transpose(0, 1) # batch_size x num_path x num_label x width
 
         m = label_matrix * output
         m = torch.sum(m, axis=2) # batch_size x num_path x width
@@ -69,3 +68,14 @@ class BiCTC:
                 matrix[j][paths[j][i]][i] = 1.0
 
         return matrix
+
+    def preprocess_label(self, text, width):
+        label = self.text_to_label(text, self.labels)
+        paths = self.label_to_paths(label, width)
+        return torch.from_numpy(self.paths_to_matrix(paths, self.labels))
+
+    def process_labels(self, labels, is_cuda=True):
+        var = torch.autograd.Variable(labels).float()
+        if is_cuda:
+            var = var.cuda()
+        return var

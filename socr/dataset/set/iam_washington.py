@@ -9,8 +9,9 @@ from socr.utils.image import image_pillow_to_numpy
 
 class IAMWashington(Dataset):
 
-    def __init__(self, helper, path, height=48, labels="", transform=True):
+    def __init__(self, helper, path, height=48, labels="", transform=True, loss=None):
         self.height = height
+        self.loss = loss
 
         self.transform = transform
         self.labels = []
@@ -66,7 +67,7 @@ class IAMWashington(Dataset):
             image = self.document_helper.augment(image)
 
 
-        return torch.from_numpy(image), text
+        return torch.from_numpy(image), self.loss.preprocess_label(text)
 
     def __len__(self):
         return len(self.labels)

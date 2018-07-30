@@ -8,11 +8,12 @@ from socr.utils.image import image_pillow_to_numpy
 
 class LineGeneratedSet(Dataset):
 
-    def __init__(self, helper, labels="", width=None, height=32, transform=True):
+    def __init__(self, helper, labels="", width=None, height=32, transform=True, loss=None):
         self.width = width
         self.height = height
         self.document_generator = LineGenerator(helper, labels)
         self.transform = transform
+        self.loss = loss
 
     def __getitem__(self, index):
         image_pillow, label = self.generate_image_with_label(index)
@@ -21,7 +22,7 @@ class LineGeneratedSet(Dataset):
         if self.transform:
             image = self.document_generator.helper.augment(image)
 
-        return torch.from_numpy(image), label
+        return torch.from_numpy(image), self.loss.preprocess_label(label)
 
     def __len__(self):
         return self.document_generator.helper.get_number_font() * 5

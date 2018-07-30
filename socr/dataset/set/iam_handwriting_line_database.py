@@ -10,8 +10,9 @@ from socr.utils.image import image_pillow_to_numpy
 
 class IAMHandwritingLineDatabase(Dataset):
 
-    def __init__(self, helper, path, height=32, labels="", transform=True):
+    def __init__(self, helper, path, height=32, labels="", transform=True, loss=None):
         self.height = height
+        self.loss = loss
 
         self.labels = []
         self.transform = transform
@@ -84,7 +85,7 @@ class IAMHandwritingLineDatabase(Dataset):
         if self.transform:
             image = self.document_helper.augment(image)
 
-        return torch.from_numpy(image), text
+        return torch.from_numpy(image), self.loss.preprocess_label(text)
 
     def __len__(self):
         return len(self.labels)

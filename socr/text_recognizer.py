@@ -62,7 +62,8 @@ class TextRecognizer:
         self.test_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=False,
                                                                testing=True,
                                                                args={"height": self.model.get_input_image_height(),
-                                                                     "labels": self.labels, "transform": False})
+                                                                     "labels": self.labels, "transform": False,
+                                                                     "loss": self.loss})
         print_normal("Test database length : " + str(self.test_database.__len__()))
 
         self.corpus = None
@@ -81,7 +82,7 @@ class TextRecognizer:
         train_database = parse_datasets_configuration_file(self.database_helper, with_line=True, training=True,
                                                            testing=False,
                                                            args={"height": self.model.get_input_image_height(),
-                                                                 "labels": self.labels}
+                                                                 "labels": self.labels, "loss": self.loss}
                                                            )
         # if not os.path.isfile(self.trainer.checkpoint_name + ".corpus"):
         #     with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
