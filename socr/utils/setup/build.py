@@ -22,6 +22,9 @@ def build_wrapctc(no_confirm = False):
         my_env["CC"] = "gcc-5"
         my_env["CMAKE_C_COMPILER"] = "gcc-5"
 
+        if os.path.isdir('submodules/warp-ctc'):
+            shutil.rmtree('submodules/warp-ctc')
+
         os.makedirs('submodules/warp-ctc', exist_ok=True)
         git.Git("submodules").clone("https://github.com/t-vi/warp-ctc.git")
         res = subprocess.run([sys.executable, 'setup.py', 'build'], cwd='submodules/warp-ctc/pytorch_binding',
@@ -53,6 +56,9 @@ def build_sru(no_confirm = False):
         response = "yes"
 
     if response == "yes":
+        if os.path.isdir('submodules/sru'):
+            shutil.rmtree('submodules/sru')
+
         os.makedirs('submodules/sru', exist_ok=True)
         git.Git("submodules").clone("https://github.com/taolei87/sru.git")
         res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/sru')
