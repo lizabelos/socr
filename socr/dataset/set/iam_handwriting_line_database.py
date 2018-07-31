@@ -85,7 +85,7 @@ class IAMHandwritingLineDatabase(Dataset):
         if self.transform:
             image = self.document_helper.augment(image)
 
-        return torch.from_numpy(image), self.loss.preprocess_label(text)
+        return torch.from_numpy(image), self.loss.preprocess_label(text, width * self.height // height)
 
     def __len__(self):
         return len(self.labels)

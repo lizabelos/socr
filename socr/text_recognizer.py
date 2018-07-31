@@ -6,6 +6,8 @@ from random import randint
 import numpy as np
 import torch
 from PIL import Image
+
+from socr.utils.language.ngram import N2GramAnalyzer
 from socr.utils.rating.word_error_rate import levenshtein
 
 from socr.dataset import parse_datasets_configuration_file
@@ -36,13 +38,19 @@ class TextRecognizer:
         :param name: The name where to save the model
         :param is_cuda: True to use cuda
         """
-        with open("resources/characters.txt", "r") as content_file:
-            self.labels = content_file.read() + " "
+        # with open("resources/characters.txt", "r") as content_file:
+        #     self.labels = content_file.read() + " "
 
-        with open("resources/word_characters.txt", "r") as content_file:
-            self.word_labels = content_file.read()
+        # with open("resources/word_characters.txt", "r") as content_file:
+        #    self.word_labels = content_file.read()
 
         self.document_helper = DocumentGeneratorHelper()
+
+        analyser = N2GramAnalyzer()
+        analyser.parse_xml_file("resources/texts/fr.xml.gz")
+        analyser.parse_xml_file("resources/texts/en.xml.gz")
+
+        self.labels = analyser.get_bests(num=8192)
 
         self.model = get_model_by_name(model_name)(self.labels)
         self.loss = self.model.create_loss()
@@ -242,7 +250,7 @@ class TextRecognizer:
         Recognize the text on all the given files
 
         :param files: The file list
-        :return: THe texts
+        :return: The texts
         """
         self.eval()
         result = []

@@ -22,6 +22,7 @@ class XHeightCCLoss(Loss):
         super().__init__()
 
         self.add_activation = None
+        self.loss_type = loss_type
         if loss_type == "mse":
             print_normal("Using MSE Loss with Hysteresis=(" + str(hysteresis_minimum) + "," + str(hysteresis_maximum) + "), thicknesses=" + str(thicknesses) + ", height_importance=" + str(height_importance))
             self.mse = torch.nn.MSELoss()
@@ -29,6 +30,8 @@ class XHeightCCLoss(Loss):
             print_normal("Using Binary Cross Entropy Loss Hysteresis=(" + str(hysteresis_minimum) + "," + str(hysteresis_maximum) + "), thicknesses=" + str(thicknesses) + ", height_importance=" + str(height_importance))
             self.mse = torch.nn.BCELoss()
             # self.mse = torch.nn.BCEWithLogitsLoss()
+        elif loss_type == "norm":
+            self.mse = None
         else:
             raise AssertionError
         self.mseh = torch.nn.MSELoss()
@@ -47,7 +50,10 @@ class XHeightCCLoss(Loss):
         y_true = y_true.permute(1, 0, 2, 3).contiguous()
 
         if self.height_importance == 0:
-            return self.mse(predicted[0], y_true[0])
+            if self.loss_type == "norm":
+                return torch.abs(predicted[0] - y_true[0])
+            else:
+                return self.mse(predicted[0], y_true[0])
         else:
             raise NotImplementedError()
             # return self.mse(predicted[0], y_true[0]) + (self.height_importance * self.mseh(predicted[1], y_true[1]))

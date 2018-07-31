@@ -24,7 +24,7 @@ Then, to compile, run ```python3 setup.py build_ext --inplace```.
 
 ### Command line
 
-Please make sure that ```checkpoint_line.pth.tar``` and ```checkpoint_ocr.pth.tar``` is present under the ```checkpoints``` filder.
+Please make sure that the checkpoints .pth.tar files is present under the ```checkpoints``` folder.
 Then run 
 ```./launch recognizer [your files] [your folders]  ...```
 
@@ -42,21 +42,21 @@ You can download the trained models and copy it to the checkpoints folder :
 ### Settings up the database
 
 Modify the file ```datasets.cfg``` so it correspond to your data-sets.
-See [example.ipnyb](examples/datasets.example.cfg) for a example.
+See [datasets.example.cfg](examples/datasets.example.cfg) for a example.
 
 ### How to train/test the line recognizer ?
 
-Execute ```./launch line``` to train the line recognizer.
-Execute ```./launch line --generateandexecute``` to test the line recognizer.
-
+Execute ```./launch line --model dhSegment --name myDhSegmentTraining --bs 8 --lr 0.0001``` to train the line recognizer.
 Use ```./launch line --help``` for more help.
+
+You can modifiy the file ```settings.cfg``` for more configuration.
 
 ### How to train/test the ocr network ?
 
-Execute ```./launch text``` to train the ocr network.
-Execute ```./launch text --evaluate [path]``` to test the ocr network. The result are placed under the ```results``` folder.
-
+Execute ```./launch text --model resSru --name myResSruTraining --bs 8 --lr 0.0001``` to train the ocr network.
 Use ```./launch text --help``` for more help.
+
+You can modifiy the file ```settings.cfg``` for more configuration.
 
 ### Command line arguments
 

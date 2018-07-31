@@ -1,10 +1,12 @@
 from lxml import etree
 
+from socr.utils.logging.logger import print_normal
 
-class NGramAnalyzer:
+
+class N2GramAnalyzer:
 
     def __init__(self):
-        with open("../resources/characters.txt") as f:
+        with open("resources/characters.txt") as f:
             self.characters = f.read() + " "
 
         self.characters_count = {}
@@ -15,7 +17,7 @@ class NGramAnalyzer:
                 self.totalx = 0
 
     def parse_xml_file(self, resource):
-        print("Parsing " + resource + "...")
+        print_normal("Parsing 2Gram of " + resource + "...")
         tree = etree.parse(resource)
         root = tree.getroot()
         self.parse_xml_root(root)
@@ -39,6 +41,24 @@ class NGramAnalyzer:
                 self.totalx += 1
             self.total += 1
 
+    def get_bests(self, num=4096):
+        lst = []
+
+        for key in self.characters_count:
+            lst.append((key, self.characters_count[key]))
+
+        lst.sort(key=lambda x: x[1], reverse=True)
+
+        lst = [("",0)] + lst[0:num - 1]
+
+
+        d = {}
+        for i in range(0, len(lst)):
+            d[lst[i][0]] = i
+
+        return d
+
+
     def get_stats(self):
         lst = []
 
@@ -60,7 +80,7 @@ class NGramAnalyzer:
 
 
 if __name__ == '__main__':
-    analyser = NGramAnalyzer()
+    analyser = N2GramAnalyzer()
     analyser.parse_xml_file("../resources/texts/fr.xml.gz")
     analyser.parse_xml_file("../resources/texts/en.xml.gz")
     print(analyser.get_stats())
