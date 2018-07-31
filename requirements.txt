@@ -7,6 +7,6 @@ python-Levenshtein
 glymur
 msgpack
 cupy
-pynvrtc=8.0
+pynvrtc==8.0
 gitpython
 wget
