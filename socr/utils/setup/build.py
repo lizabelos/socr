@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
+import shutil
 
 import git
 
