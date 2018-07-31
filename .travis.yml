@@ -1,17 +1,12 @@
 language: python
 python:
   - "3.6"
-env:
-  matrix:
-    - CUDA_VER = 8.0.61-1
-    - CUDA_APT_VER=${CUDA_VER%-*}
-    - CUDA_APT_VER=${CUDA_APT_VER/./-}
 install:
-  - wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_${CUDA_VER}_amd64.deb
+  - wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_8.0.61-1_amd64.deb
   - sudo dpkg -i cuda-repo-ubuntu1404_8.0.61-1_amd64.deb
   - rm cuda-repo-ubuntu1404_8.0.61-1_amd64.deb
-  - sudo apt-get install -y cuda-drivers cuda-core-${CUDA_APT_VER} cuda-cudart-dev-${CUDA_APT_VER} cuda-cufft-dev-${CUDA_APT_VER}
   - sudo apt-get update
+  - sudo apt-get install -y cuda
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
