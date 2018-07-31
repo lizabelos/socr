@@ -22,8 +22,8 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
   - pip install cython
-  - python3 setup.py install_requirements
-  - python3 setup.py build_ext --inplace
+  - $HOME/miniconda/bin/python3 setup.py install_requirements
+  - $HOME/miniconda/bin/python3 setup.py build_ext --inplace
 # command to run tests
 script:
   - python3 -m socr
