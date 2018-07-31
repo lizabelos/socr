@@ -46,30 +46,38 @@ class InstallRequirements(distutils.cmd.Command):
         assert res.returncode == 0, "Error"
 
         res = subprocess.run(
-            [sys.executable, '-m', 'conda', 'install', '-y', 'opencv'])
-        assert res.returncode == 0, "Error"
-
-        res = subprocess.run(
             [sys.executable, '-m', 'conda', 'install', '-y', '-c', 'conda-forge', 'scikit-image'])
         assert res.returncode == 0, "Error"
 
         res = subprocess.run([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
         assert res.returncode == 0, "Error"
 
-        # res = subprocess.run([sys.executable, '-m', 'conda', 'install', '-y', '--channel', 'https://conda.anaconda.org/menpo', 'opencv3'])
-        # assert res.returncode == 0, "Error"
+        res = subprocess.run([sys.executable, 'setup.py', 'install_externals'])
+        assert res.returncode == 0, "Error"
 
+
+class InstallExternals(distutils.cmd.Command):
+    description = "Install externals"
+    user_options = []
+
+    def initialize_options(self):
+        self.cwd = None
+
+    def finalize_options(self):
+        self.cwd = os.getcwd()
+
+    def run(self):
         from socr.utils.setup.build import build_sru, build_wrapctc
-		
+
         build_sru(no_confirm=True)
         build_wrapctc(no_confirm=True)
-
 
 
 setup(
     cmdclass={
         'build_ext': build_ext,
-        'install_requirements': InstallRequirements
+        'install_requirements': InstallRequirements,
+        'install_externals': InstallExternals
     },
     ext_modules=cythonize(extensions),
 )
