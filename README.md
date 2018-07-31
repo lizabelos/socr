@@ -4,6 +4,8 @@
 
 Structured OCR is a line localization and text recognition tools using Deep Learning with PyTorch.
 
+<img src="resources/md/demo.gif" height="100">
+
 ## Build status
 
 [![Build Status](https://travis-ci.org/belosthomas/socr.svg?branch=master)](https://travis-ci.org/belosthomas/socr)

@@ -2,6 +2,9 @@ language: python
 python:
   - "3.6"
 install:
+  - wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-8-0_8.0.61-1_amd64.deb
+  - dpkg -i cuda-8-0_8.0.61-1_amd64.deb
+  - rm cuda-8-0_8.0.61-1_amd64.deb
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
