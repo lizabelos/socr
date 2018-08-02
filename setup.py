@@ -81,10 +81,10 @@ class InstallExternals(distutils.cmd.Command):
 
         os.makedirs('submodules/warp-ctc', exist_ok=True)
         git.Git("submodules").clone("https://github.com/t-vi/warp-ctc.git")
-        res = subprocess.run([sys.executable, 'setup.py', 'build'], cwd='submodules/warp-ctc/pytorch_binding',
+        res = subprocess.run([sys.executable, 'submodules/warp-ctc/pytorch_binding/setup.py', 'build'], cwd='submodules/warp-ctc/pytorch_binding',
                              env=my_env)
         assert res.returncode == 0, "Error"
-        res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/warp-ctc/pytorch_binding',
+        res = subprocess.run([sys.executable, 'submodules/warp-ctc/pytorch_binding/setup.py', 'install'], cwd='submodules/warp-ctc/pytorch_binding',
                              env=my_env)
         assert res.returncode == 0, "Error"
 
