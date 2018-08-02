@@ -1,9 +1,11 @@
 import distutils
 import os
+import shutil
 import subprocess
 import sys
 from distutils.core import setup
 from distutils.extension import Extension
+
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
@@ -38,10 +40,6 @@ class InstallRequirements(distutils.cmd.Command):
         assert res.returncode == 0, "Error"
 
         res = subprocess.run(
-            [sys.executable, '-m', 'conda', 'install', '-y', 'cupy'])
-        assert res.returncode == 0, "Error"
-
-        res = subprocess.run(
             [sys.executable, '-m', 'conda', 'install', '-y', 'opencv'])
         assert res.returncode == 0, "Error"
 
@@ -67,10 +65,26 @@ class InstallExternals(distutils.cmd.Command):
         self.cwd = os.getcwd()
 
     def run(self):
-        from socr.utils.setup.build import build_sru, build_wrapctc
+        self.build_wrapctc()
 
-        build_sru(no_confirm=True)
-        build_wrapctc(no_confirm=True)
+    def build_wrapctc(self):
+        my_env = os.environ.copy()
+        my_env["CXX"] = "g++-5"
+        my_env["CMAKE_CXX_COMPILER"] = "g++5"
+        my_env["CC"] = "gcc-5"
+        my_env["CMAKE_C_COMPILER"] = "gcc-5"
+
+        if os.path.isdir('submodules/warp-ctc'):
+            shutil.rmtree('submodules/warp-ctc')
+
+        os.makedirs('submodules/warp-ctc', exist_ok=True)
+        git.Git("submodules").clone("https://github.com/t-vi/warp-ctc.git")
+        res = subprocess.run([sys.executable, 'setup.py', 'build'], cwd='submodules/warp-ctc/pytorch_binding',
+                             env=my_env)
+        assert res.returncode == 0, "Error"
+        res = subprocess.run([sys.executable, 'setup.py', 'install'], cwd='submodules/warp-ctc/pytorch_binding',
+                             env=my_env)
+        assert res.returncode == 0, "Error"
 
 
 setup(

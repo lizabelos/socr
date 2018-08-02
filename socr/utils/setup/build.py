@@ -57,6 +57,10 @@ def build_sru(no_confirm = False):
         response = "yes"
 
     if response == "yes":
+        res = subprocess.run(
+            [sys.executable, '-m', 'conda', 'install', '-y', 'cupy'])
+        assert res.returncode == 0, "Error"
+
         if os.path.isdir('submodules/sru'):
             shutil.rmtree('submodules/sru')
 
