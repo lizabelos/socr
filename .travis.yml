@@ -27,6 +27,3 @@ install:
   - $HOME/miniconda/bin/python3 setup.py install_requirements
   - $HOME/miniconda/bin/python3 setup.py install_externals
   - $HOME/miniconda/bin/python3 setup.py build_ext --inplace
-# command to run tests
-script:
-  - python3 -m socr
