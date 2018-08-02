@@ -50,9 +50,6 @@ class InstallRequirements(distutils.cmd.Command):
         res = subprocess.run([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'])
         assert res.returncode == 0, "Error"
 
-        res = subprocess.run([sys.executable, 'setup.py', 'install_externals'])
-        assert res.returncode == 0, "Error"
-
 
 class InstallExternals(distutils.cmd.Command):
     description = "Install externals"
