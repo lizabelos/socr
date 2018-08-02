@@ -3,7 +3,6 @@ import os
 import shutil
 import subprocess
 import sys
-import git
 from distutils.core import setup
 from distutils.extension import Extension
 
@@ -69,6 +68,8 @@ class InstallExternals(distutils.cmd.Command):
         self.build_wrapctc()
 
     def build_wrapctc(self):
+        import git
+
         my_env = os.environ.copy()
         my_env["CXX"] = "g++-5"
         my_env["CMAKE_CXX_COMPILER"] = "g++5"

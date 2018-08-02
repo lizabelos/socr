@@ -10,6 +10,15 @@ Structured OCR is a line localization and text recognition tools using Deep Lear
 
 [![Build Status](https://travis-ci.org/belosthomas/socr.svg?branch=master)](https://travis-ci.org/belosthomas/socr)
 
+## Get started
+
+1. [Build and Install SOCR](https://github.com/belosthomas/socr/wiki/Build-and-Install-SOCR)
+    1. [Linux](https://github.com/belosthomas/socr/wiki/Build-and-Install-SOCR#linux)
+2. [Command line tools](https://github.com/belosthomas/socr/wiki/Command-line-tools)
+    1. [How to recognize a page of text ?](https://github.com/belosthomas/socr/wiki/Command-line-tools#how-to-recognize-a-page-of-text-)
+    2. [How to train/test with command line](https://github.com/belosthomas/socr/wiki/Command-line-tools#how-to-traintest-with-command-line)
+
+
 ## Setting up
 
 ### Requirements
