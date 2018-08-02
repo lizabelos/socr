@@ -6,7 +6,6 @@ lxml>=3.5.0
 python-Levenshtein
 glymur
 msgpack
-cupy
 pynvrtc==8.0
 gitpython
 wget
