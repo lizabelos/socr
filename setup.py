@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import git
 from distutils.core import setup
 from distutils.extension import Extension
 
