@@ -23,8 +23,6 @@ install:
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment
   - $HOME/miniconda/bin/python3 -m pip install cython
   - $HOME/miniconda/bin/python3 setup.py install_requirements
   - $HOME/miniconda/bin/python3 setup.py install_externals
