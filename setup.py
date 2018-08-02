@@ -67,22 +67,14 @@ class InstallExternals(distutils.cmd.Command):
     def build_wrapctc(self):
         import git
 
-        my_env = os.environ.copy()
-        my_env["CXX"] = "g++-5"
-        my_env["CMAKE_CXX_COMPILER"] = "g++5"
-        my_env["CC"] = "gcc-5"
-        my_env["CMAKE_C_COMPILER"] = "gcc-5"
-
         if os.path.isdir('submodules/warp-ctc'):
             shutil.rmtree('submodules/warp-ctc')
 
         os.makedirs('submodules/warp-ctc', exist_ok=True)
         git.Git("submodules").clone("https://github.com/t-vi/warp-ctc.git")
-        res = subprocess.run([sys.executable, os.path.join(self.cwd,'submodules/warp-ctc/pytorch_binding/setup.py'), 'build'], cwd='submodules/warp-ctc/pytorch_binding',
-                             env=my_env)
+        res = subprocess.run([sys.executable, os.path.join(self.cwd,'submodules/warp-ctc/pytorch_binding/setup.py'), 'build'], cwd='submodules/warp-ctc/pytorch_binding')
         assert res.returncode == 0, "Error"
-        res = subprocess.run([sys.executable, os.path.join(self.cwd,'submodules/warp-ctc/pytorch_binding/setup.py'), 'install'], cwd='submodules/warp-ctc/pytorch_binding',
-                             env=my_env)
+        res = subprocess.run([sys.executable, os.path.join(self.cwd,'submodules/warp-ctc/pytorch_binding/setup.py'), 'install'], cwd='submodules/warp-ctc/pytorch_binding')
         assert res.returncode == 0, "Error"
 
 
