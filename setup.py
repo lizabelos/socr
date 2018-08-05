@@ -18,7 +18,7 @@ extensions = [
     Extension("socr.utils.language.prefix_tree", ["socr/utils/language/prefix_tree.pyx"]),
     Extension("socr.utils.language.language_model", ["socr/utils/language/language_model.pyx"]),
     Extension("socr.utils.language.word_beam_search", ["socr/utils/language/word_beam_search.pyx"]),
-    Extension("socr.models.loss.bictc", ["socr/models/loss/bictc.pyx"])
+    Extension("socr.models.loss.ctc", ["socr/models/loss/ctc.pyx"])
 ]
 
 
