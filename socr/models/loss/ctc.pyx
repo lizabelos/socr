@@ -65,7 +65,7 @@ cdef class CTC:
         label = [blank_label_start] + label + [blank_label_end]
 
         cdef float[:,:] matrix = np.zeros((width, len(label)), dtype='float32')
-        cdef float[:,:] time_sum = np.zeros((width), dtype='float32')
+        cdef float[:] time_sum = np.zeros((width), dtype='float32')
 
         cdef int i
         for i in range(0, width):
