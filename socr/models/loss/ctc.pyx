@@ -87,9 +87,7 @@ cdef class CTC:
                         matrix[i][j] += matrix[i - 1][j - 1]
                         time_sum[i] += matrix[i - 1][j - 1]
 
-        matrix = matrix / time_sum
-
-
+    
         cdef float[:,:] char_matrix = np.zeros((width, len(self.labels)), dtype='float32')
         cdef int blank_label = self.labels[""]
 
@@ -99,7 +97,7 @@ cdef class CTC:
                 if label_id < 0:
                     label_id = blank_label
 
-                char_matrix[i][label_id] += matrix[i][j]
+                char_matrix[i][label_id] += matrix[i][j] / time_sum[i]
 
         return char_matrix
 
