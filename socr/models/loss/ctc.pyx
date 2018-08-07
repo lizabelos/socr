@@ -3,7 +3,7 @@ from functools import reduce
 import numpy as np
 import torch
 
-from socr.utils.logging.logger import print_normal, print_warning
+from socr.utils.logging.logger import print_normal, print_warning, print_error
 
 cdef class CTC:
 
@@ -19,7 +19,7 @@ cdef class CTC:
 
         self.labels = labels
         self.width_transform = width_transform
-        self.nll = torch.nn.PoissonNLLLoss()
+        self.nll = torch.nn.BCELoss()
         self.blank_as_separator = blank_as_separator
 
     def forward(self, output, label_matrix):
@@ -29,7 +29,10 @@ cdef class CTC:
         # OUTPUT : width x batch_size x num_label
         # LABEL : batch_size x num_label x width
 
-        output = output.permute(1,0,2)
+        # output = output.permute(1,0,2)
+
+        assert not torch.isnan(output).any()
+        assert not torch.isnan(label_matrix).any()
 
         return self.nll(output, label_matrix)
 
@@ -68,6 +71,7 @@ cdef class CTC:
         cdef float[:] time_sum = np.zeros((width), dtype='float32')
 
         cdef int i
+        cdef int j
         cdef int start_range = 0
         cdef int end_range = 0
 
@@ -84,16 +88,17 @@ cdef class CTC:
                     matrix[i][j] += 1.0
                     time_sum[i] += 1.0
                 else:
-                    matrix[i][j] += matrix[i - 1][j]
-                    time_sum[i] += matrix[i - 1][j]
+                    matrix[i][j] += matrix[i - 1][j] / time_sum[i - 1]
+                    time_sum[i] += matrix[i - 1][j] / time_sum[i - 1]
 
                     if j != 0:
-                        matrix[i][j] += matrix[i - 1][j - 1]
-                        time_sum[i] += matrix[i - 1][j - 1]
+                        matrix[i][j] += matrix[i - 1][j - 1] / time_sum[i - 1]
+                        time_sum[i] += matrix[i - 1][j - 1] / time_sum[i - 1]
 
     
         cdef float[:,:] char_matrix = np.zeros((width, len(self.labels)), dtype='float32')
         cdef int blank_label = self.labels[""]
+        cdef int label_id
 
         for i in range(0, width):
             for j in range(0, len(label)):
@@ -101,9 +106,14 @@ cdef class CTC:
                 if label_id < 0:
                     label_id = blank_label
 
-                if time_sum[i] != 0:
-                    # todo : this is not beetween 0 and 1
-                    char_matrix[i][label_id] += matrix[i][j] / time_sum[i]
+                if time_sum[i] == 0:
+                    print("wrong time sum for " + str(i))
+
+                char_matrix[i][label_id] += matrix[i][j] / time_sum[i]
+
+                if np.isnan(char_matrix[i][label_id]):
+                    print_error("Numerical stability error at CTC for time " + str(i) + " with values : " + str(matrix[i][j]) + " " + str(time_sum[i]))
+                    assert False
 
         return char_matrix
 

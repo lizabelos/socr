@@ -60,9 +60,9 @@ class resSru(ConvolutionalModel):
         x, _ = self.rnn(x)
         x = self.fc(x)
 
-        if not self.training:
-            x = x.transpose(0, 1)
-            x = torch.nn.functional.softmax(x, dim=2)
+        # if not self.training:
+        x = x.transpose(0, 1)
+        x = torch.nn.functional.softmax(x, dim=2)
 
         return x
 
