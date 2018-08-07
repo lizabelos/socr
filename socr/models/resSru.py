@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 import torch
 
+from socr.models.loss.ctc import CTC
 from socr.nn import IndRNN
 from socr.nn.modules.resnet import ResNet, Bottleneck, BasicBlock
 from socr.utils.setup.build import install_and_import_sru
@@ -18,7 +19,7 @@ class resSru(ConvolutionalModel):
         super().__init__()
 
         self.labels = labels
-        self.output_numbers = len(labels) + 1
+        self.output_numbers = len(labels)
 
         self.activation = torch.nn.ReLU()
 
@@ -26,7 +27,7 @@ class resSru(ConvolutionalModel):
             ('conv1', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
             ('bn1', torch.nn.BatchNorm2d(64)),
             ('activation', torch.nn.ReLU(inplace=True)),
-            ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=(1, 0))),
+            ('maxpool', torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=(1, 1))),
             ('resnet', ResNet(BasicBlock, [2, 2, 2, 2], strides=[1, (2, 1), (2, 1), (2, 1)], bn=True)),
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
@@ -72,7 +73,10 @@ class resSru(ConvolutionalModel):
         return 64
 
     def create_loss(self):
-        return CTCTextLoss(self.labels)
+        return CTC(self.labels, lambda x: self.conv_output_size(self.conv_output_size(x, 7, 3, 2), 3, 1, 2))
+
+    def conv_output_size(self, width, filter_size, padding, stride):
+        return (width - filter_size + 2 * padding) / stride + 1
 
     def adaptative_learning_rate(self, optimizer):
         return torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.98)

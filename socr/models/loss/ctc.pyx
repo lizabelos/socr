@@ -20,7 +20,7 @@ cdef class CTC:
         self.labels = labels
         self.width_transform = width_transform
         self.nll = torch.nn.PoissonNLLLoss()
-        self.blank_as_seperator = blank_as_separator
+        self.blank_as_separator = blank_as_separator
 
     def forward(self, output, label_matrix):
         # print(output.size())
@@ -68,12 +68,16 @@ cdef class CTC:
         cdef float[:] time_sum = np.zeros((width), dtype='float32')
 
         cdef int i
+        cdef int start_range = 0
+        cdef int end_range = 0
+
         for i in range(0, width):
 
             # todo : check start and end range
             # todo : start with blank and first, end with blank end last (idea : increment width by 2)
-            end_range = min(i, len(label) - 1)
-            start_range = max(width - (i + 1) ,0)
+            end_range = min(end_range + 1, len(label) - 1)
+            if width - i <= len(label):
+                start_range = min(start_range + 1, len(label) - 1)
 
             for j in range(start_range, end_range + 1):
                 if i == 0:
@@ -97,20 +101,44 @@ cdef class CTC:
                 if label_id < 0:
                     label_id = blank_label
 
-                char_matrix[i][label_id] += matrix[i][j] / time_sum[i]
+                if time_sum[i] != 0:
+                    # todo : this is not beetween 0 and 1
+                    char_matrix[i][label_id] += matrix[i][j] / time_sum[i]
 
         return char_matrix
 
     def preprocess_label(self, text, width):
         width = int(self.width_transform(width))
         label = self.text_to_label(text)
-        return torch.from_numpy(self.label_to_path_matrix(label, width))
+        matrix = self.label_to_path_matrix(label, width)
+        return torch.from_numpy(np.array(matrix))
 
     def process_labels(self, labels, is_cuda=True):
         var = torch.autograd.Variable(labels).float()
         if is_cuda:
             var = var.cuda()
         return var
+
+    def ytrue_to_lines(self, sequence):
+        # OUTPUT : width x batch_size x num_label
+        width = sequence.shape[0]
+        batch_size = sequence.shape[1]
+
+        text = ""
+        last_label = -1
+
+        for time in range(0, width):
+
+            max_label = 0
+            for i in range(1, len(self.labels)):
+                if sequence[time][0][i] > sequence[time][0][max_label]:
+                    max_label = i
+            
+            if max_label != last_label:
+                text = text + self.labels[max_label]
+                last_label = max_label
+
+        return text
 
     # def collate(self, batch):
     #     data = [item[0] for item in batch]

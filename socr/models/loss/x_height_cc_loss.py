@@ -51,7 +51,7 @@ class XHeightCCLoss(Loss):
 
         if self.height_importance == 0:
             if self.loss_type == "norm":
-                return torch.abs(predicted[0] - y_true[0])
+                return torch.mean(torch.abs(predicted[0] - y_true[0]))
             else:
                 return self.mse(predicted[0], y_true[0])
         else:

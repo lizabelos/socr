@@ -112,7 +112,7 @@ class Trainer:
          }
         torch.save(checkpoint, self.checkpoint_name + ".autosave")
 
-    def train(self, data_set, batch_size=1, callback=None):
+    def train(self, data_set, batch_size=1, callback=None, epoch_limit=None):
         """
         Train the network until the loss won't decrease.
 
@@ -134,6 +134,10 @@ class Trainer:
 
             with open(self.csv_name_acc, append_write) as csv_acc, open(self.csv_name_loss, append_write) as csv_loss, open(self.csv_name_lr, append_write) as csv_lr:
                 while self.optimizer.state_dict()['param_groups'][0]['lr'] > 1e-7:
+                    if epoch_limit is not None and self.epoch > epoch_limit:
+                        print_normal("Epoch " + str(epoch_limit) + "reached !")
+                        break
+
                     self.do_one_epoch(loader, batch_size)
                     if callback is not None:
                         self.error = callback()

@@ -10,7 +10,7 @@ from socr.utils.logging.logger import print_normal
 
 class dhSegment(ConvolutionalModel):
 
-    def __init__(self, loss_type="mse", hysteresis_minimum=0.5, hysteresis_maximum=0.5, thicknesses=2, height_importance=1.0, exponential_decay=1.0):
+    def __init__(self, loss_type="mse", hysteresis_minimum=0.5, hysteresis_maximum=0.5, thicknesses=2, height_importance=1.0, exponential_decay=1.0, bn_momentum=0.1):
         super(dhSegment, self).__init__()
 
         self.loss_type = loss_type
@@ -19,6 +19,7 @@ class dhSegment(ConvolutionalModel):
         self.thicknesses = thicknesses
         self.height_importance = height_importance
         self.exponential_decay = exponential_decay
+        self.bn_momentum = 0.1
 
         self.inplanes = 64
 
@@ -57,6 +58,17 @@ class dhSegment(ConvolutionalModel):
 
         print_normal("Loading pretrained resnet...")
         self.load_my_state_dict(pretrained_model)
+
+        print_normal("Adjusting Batch Normalization momentum to " + str(self.bn_momentum))
+        self.apply(self.adjust_bn_decay(self.bn_momentum))
+
+    def adjust_bn_decay(self, dec):
+        def fn(m):
+            classname = m.__class__.__name__
+            if classname.find('BatchNorm') != -1:
+                m.track_running_stats=False
+                m.momentum = dec
+        return fn
 
     def weights_init(self, m):
         if isinstance(m, torch.nn.Conv2d):

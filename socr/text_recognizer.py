@@ -74,10 +74,6 @@ class TextRecognizer:
                                                                      "loss": self.loss})
         print_normal("Test database length : " + str(self.test_database.__len__()))
 
-        self.corpus = None
-        self.lm = None
-        self.text_generator = None
-
     def train(self, batch_size=1, overlr=None):
         """
         Train the network
@@ -112,20 +108,6 @@ class TextRecognizer:
         """
         self.model.eval()
 
-        if self.lm is None:
-            with open("resources/words_alpha.txt", "r") as content_file:
-                self.corpus = content_file.read() + "\n"
-
-            with open("resources/artists.txt", "r") as content_file:
-                self.corpus += content_file.read() + "\n"
-
-            with open("resources/mots.json", "r") as content_file:
-                self.corpus += content_file.read()
-
-            # self.text_generator = TextGenerator()
-
-            print_normal("Initializing language model...")
-            self.lm = LanguageModel(self.corpus, self.labels, self.word_labels)
 
     def test(self, limit=None):
         """
@@ -159,7 +141,7 @@ class TextRecognizer:
             else:
                 result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cpu()))
 
-            text = self.loss.ytrue_to_lines(self.lm, result)
+            text = self.loss.ytrue_to_lines(result)
 
             # update CER statistics
             _, (s, i, d) = levenshtein(label, text)

@@ -45,7 +45,8 @@ class LineLocalizator:
                                                    float(self.settings.get("line", "hysteresis_maximum")),
                                                    int(self.settings.get("line", "thicknesses")),
                                                    float(self.settings.get("line", "height_importance")),
-                                                   float(self.settings.get("line", "exponential_decay")))
+                                                   float(self.settings.get("line", "exponential_decay")),
+                                                   float(self.settings.get("line", "bn_momentum")))
         self.loss = self.model.create_loss()
         if is_cuda:
             self.model = self.model.cuda()
@@ -79,7 +80,8 @@ class LineLocalizator:
         train_database = parse_datasets_configuration_file(self.database_helper, with_document=True, training=True,
                                                            testing=False, args={"loss": self.loss, "transform": True})
         print_normal("Train database length : " + str(train_database.__len__()))
-        self.trainer.train(train_database, batch_size=batch_size, callback=self.callback)
+        self.trainer.train(train_database, batch_size=batch_size, callback=self.callback,
+            epoch_limit=int(self.settings.get("line", "epoch_limit")))
 
     def set_lr(self, lr):
         """
