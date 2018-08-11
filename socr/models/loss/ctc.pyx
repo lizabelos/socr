@@ -16,25 +16,32 @@ cdef class CTC:
         super().__init__()
 
         # todo : blank as separator
-
         self.labels = labels
         self.width_transform = width_transform
         self.nll = torch.nn.BCELoss()
         self.blank_as_separator = blank_as_separator
 
     def forward(self, output, label_matrix):
-        # print(output.size())
-        # print(label_matrix.size())
-
-        # OUTPUT : width x batch_size x num_label
-        # LABEL : batch_size x num_label x width
-
-        # output = output.permute(1,0,2)
+        # batch_size x probs x width
 
         assert not torch.isnan(output).any()
         assert not torch.isnan(label_matrix).any()
 
-        return self.nll(output, label_matrix)
+        # print(torch.sum(output, dim=1))
+        # print(torch.sum(label_matrix, dim=2))
+
+        prob_matrix = output * label_matrix
+        prob_matrix = torch.sum(prob_matrix, dim=2)
+
+        # print("COUCOU")
+        # print(prob_matrix)
+
+        prob_matrix = -torch.log(prob_matrix)
+
+        # print("AU REVOIR")
+        # print(prob_matrix)
+
+        return torch.sum(prob_matrix)
 
     def cuda(self, **kwargs):
         print_normal("Using CTCLoss with CUDA")
@@ -64,7 +71,7 @@ cdef class CTC:
 
     cpdef label_to_path_matrix(self, list label, int width):
         cdef int blank_label_start = -1
-        cdef int blank_label_end = -1
+        cdef int blank_label_end = -2
         label = [blank_label_start] + label + [blank_label_end]
 
         cdef float[:,:] matrix = np.zeros((width, len(label)), dtype='float32')
