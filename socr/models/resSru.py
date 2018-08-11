@@ -19,7 +19,8 @@ class resSru(ConvolutionalModel):
         super().__init__()
 
         self.labels = labels
-        self.output_numbers = len(labels)
+        self.output_numbers =  max(labels.values()) + 1
+        self.rnn_size = self.output_numbers // 2
 
         self.activation = torch.nn.ReLU()
 
@@ -32,7 +33,7 @@ class resSru(ConvolutionalModel):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=2, bidirectional=True, dropout=0.3)
+        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, num_layers=2, bidirectional=True, dropout=0.3)
         # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
 
         # print(self.convolutions_output_size)
@@ -40,7 +41,7 @@ class resSru(ConvolutionalModel):
         # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
         #                    bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
-        self.fc = torch.nn.Linear(2 * 256, self.output_numbers)
+        self.fc = torch.nn.Linear(2 * self.rnn_size, self.output_numbers)
 
         self.softmax = torch.nn.Softmax(dim = 2)
 

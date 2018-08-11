@@ -9,23 +9,27 @@ cdef class CTC:
 
     cdef object nll
     cdef dict labels
+    cdef dict inv_labels
     cdef object width_transform
     cdef bint blank_as_separator
+    cdef int label_len
 
     def __init__(self, labels, width_transform, blank_as_separator=False):
         super().__init__()
 
         # todo : blank as separator
         self.labels = labels
+        self.inv_labels = {v: k for k, v in self.labels.items()}
         self.width_transform = width_transform
         self.nll = torch.nn.BCELoss()
         self.blank_as_separator = blank_as_separator
+        self.label_len = max(labels.values()) + 1
 
     def forward(self, output, label_matrix):
         # batch_size x probs x width
 
-        assert not torch.isnan(output).any()
-        assert not torch.isnan(label_matrix).any()
+        # assert not torch.isnan(output).any()
+        # assert not torch.isnan(label_matrix).any()
 
         # print(torch.sum(output, dim=1))
         # print(torch.sum(label_matrix, dim=2))
@@ -60,11 +64,18 @@ cdef class CTC:
         for i in range(1, len(text)):
             c1 = text[i - 1]
             c2 = text[i]
-            try:
+
+            if c1 in self.labels:
+                index = self.labels[c1]
+                text_label.append(index)
+            elif c1 + c2 in self.labels:
                 index = self.labels[c1 + c2]
                 text_label.append(index)
-            except KeyError:
+            else:
                 print_warning("Invalid key : " + c1 + c2)
+
+        if len(text_label) == 0:
+            print_warning("Text label of length 0")
 
         return text_label
 
@@ -103,7 +114,7 @@ cdef class CTC:
                         time_sum[i] += matrix[i - 1][j - 1] / time_sum[i - 1]
 
     
-        cdef float[:,:] char_matrix = np.zeros((width, len(self.labels)), dtype='float32')
+        cdef float[:,:] char_matrix = np.zeros((width, self.label_len), dtype='float32')
         cdef int blank_label = self.labels[""]
         cdef int label_id
 
@@ -115,7 +126,7 @@ cdef class CTC:
 
                 if time_sum[i] == 0:
                     print("wrong time sum for " + str(i))
-
+                
                 char_matrix[i][label_id] += matrix[i][j] / time_sum[i]
 
                 if np.isnan(char_matrix[i][label_id]):
@@ -147,12 +158,12 @@ cdef class CTC:
         for time in range(0, width):
 
             max_label = 0
-            for i in range(1, len(self.labels)):
+            for i in range(1, self.label_len):
                 if sequence[time][0][i] > sequence[time][0][max_label]:
                     max_label = i
             
             if max_label != last_label:
-                text = text + self.labels[max_label]
+                text = text + self.inv_labels[max_label]
                 last_label = max_label
 
         return text

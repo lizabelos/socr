@@ -38,19 +38,31 @@ class TextRecognizer:
         :param name: The name where to save the model
         :param is_cuda: True to use cuda
         """
-        # with open("resources/characters.txt", "r") as content_file:
-        #     self.labels = content_file.read() + " "
+        use_bigram = False
+        if not use_bigram:
+            print_normal("Using 1-Gram")
+            with open("resources/characters.txt", "r") as content_file:
+                lst = content_file.read() + " "
+
+            self.labels = {}
+            self.labels[""] = 0
+            for i in range(0, len(lst)):
+                self.labels[lst[i]] = i + 1
+
+        else:
+            print_normal("Using 2-Gram")
+            analyser = N2GramAnalyzer()
+            analyser.parse_xml_file("resources/texts/fr.xml.gz")
+            analyser.parse_xml_file("resources/texts/en.xml.gz")
+
+            self.labels = analyser.get_bests(num=8192)
 
         # with open("resources/word_characters.txt", "r") as content_file:
         #    self.word_labels = content_file.read()
 
         self.document_helper = DocumentGeneratorHelper()
 
-        analyser = N2GramAnalyzer()
-        analyser.parse_xml_file("resources/texts/fr.xml.gz")
-        analyser.parse_xml_file("resources/texts/en.xml.gz")
-
-        self.labels = analyser.get_bests(num=8192)
+        
 
         self.model = get_model_by_name(model_name)(self.labels)
         self.loss = self.model.create_loss()
@@ -63,7 +75,7 @@ class TextRecognizer:
             self.loss = self.loss.cpu()
 
         self.optimizer = get_optimizer_by_name(optimizer_name)(self.model.parameters(), lr=lr)
-        self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
+        self.trainer = Trainer(self.model, self.loss, self.optimizer, name, clip_gradient=1)
 
         load_default_datasets_cfg_if_not_exist()
         self.database_helper = DocumentGeneratorHelper()
@@ -92,7 +104,7 @@ class TextRecognizer:
         #     with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
         #         corpus.write(train_database.get_corpus())
 
-        self.trainer.train(train_database, batch_size=batch_size, callback=lambda: self.trainer_callback())
+        self.trainer.train(train_database, batch_size=batch_size)
 
     def trainer_callback(self):
         """

@@ -53,6 +53,9 @@ class Trainer:
         self.adaptative_optimizer = model.adaptative_learning_rate(self.optimizer)
         self.epoch = 0
         self.clip_gradient = clip_gradient
+        if self.clip_gradient is not None:
+            print_normal("Clipping the gradient to " + str(clip_gradient))
+
         self.start_time = None
         self.elapsed = 0.0
         self.error = None
@@ -212,7 +215,7 @@ class Trainer:
             loss_value.backward()
 
             if self.clip_gradient is not None:
-                torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip_gradient)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_gradient)
 
             self.optimizer.step()
 
