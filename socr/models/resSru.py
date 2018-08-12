@@ -20,7 +20,7 @@ class resSru(ConvolutionalModel):
 
         self.labels = labels
         self.output_numbers =  max(labels.values()) + 1
-        self.rnn_size = self.output_numbers // 2
+        self.rnn_size = 256
 
         self.activation = torch.nn.ReLU()
 

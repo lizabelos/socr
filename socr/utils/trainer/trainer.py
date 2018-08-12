@@ -115,7 +115,7 @@ class Trainer:
          }
         torch.save(checkpoint, self.checkpoint_name + ".autosave")
 
-    def train(self, data_set, batch_size=1, callback=None, epoch_limit=None):
+    def train(self, data_set, batch_size=1, callback=None, epoch_limit=None, alternative_loss=None):
         """
         Train the network until the loss won't decrease.
 
@@ -124,6 +124,7 @@ class Trainer:
         :param callback: A test function to call after every epochs. The returned value from this function will be writed into the CSV as test accuracy value.
         """
         self.moving_average = MovingAverage(max(data_set.__len__() // batch_size, 1024))
+        self.alt_moving_average = MovingAverage(max(data_set.__len__() // batch_size, 1024))
 
         if hasattr(self.loss, "collate"):
             loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=self.loss.collate)
@@ -141,7 +142,7 @@ class Trainer:
                         print_normal("Epoch " + str(epoch_limit) + "reached !")
                         break
 
-                    self.do_one_epoch(loader, batch_size)
+                    self.do_one_epoch(loader, batch_size, alternative_loss)
                     if callback is not None:
                         self.error = callback()
 
@@ -167,7 +168,7 @@ class Trainer:
                 if i == "no":
                     break
 
-    def do_one_epoch(self, data_loader, batch_size):
+    def do_one_epoch(self, data_loader, batch_size, alternative_loss):
         """
         Train for one epoch
 
@@ -222,13 +223,16 @@ class Trainer:
             loss_value_np = float(loss_value.data.cpu().numpy())
             self.moving_average.addn(loss_value_np)
 
+            if alternative_loss is not None:
+                self.alt_moving_average.addn(alternative_loss(labels, outputs))
+
             if (i * batch_size) % 8 == 0:
                 end_time = datetime.now()
                 diff = end_time - self.start_time
                 self.start_time = end_time
                 self.elapsed = self.elapsed + diff.total_seconds()
                 sys.stdout.write(TerminalColors.BOLD + '[%d, %5d] ' % (self.epoch + 1, (i * batch_size) + 1) + TerminalColors.ENDC)
-                sys.stdout.write('lr: %.8f; loss: %.4f ; curr : %.4f; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), loss_value_np, self.elapsed / 60))
+                sys.stdout.write('lr: %.8f; loss: %.4f ; aloss: %.4f ; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), self.alt_moving_average.moving_average(), self.elapsed / 60))
 
         self.epoch = self.epoch + 1
         # self.adaptative_optimizer.step()

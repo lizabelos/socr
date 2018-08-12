@@ -104,7 +104,7 @@ class TextRecognizer:
         #     with open(self.trainer.checkpoint_name + ".corpus", "w") as corpus:
         #         corpus.write(train_database.get_corpus())
 
-        self.trainer.train(train_database, batch_size=batch_size)
+        self.trainer.train(train_database, batch_size=batch_size, callback=lambda: self.trainer_callback(), alternative_loss=lambda x,y: self.alternative_loss(x,y))
 
     def trainer_callback(self):
         """
@@ -144,6 +144,7 @@ class TextRecognizer:
 
         for i, data in enumerate(loader, 0):
             image, label = self.test_database.__getitem__(i)
+            label = label[1]
 
             if image.shape[2] < 8:
                 continue
@@ -153,7 +154,12 @@ class TextRecognizer:
             else:
                 result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cpu()))
 
-            text = self.loss.ytrue_to_lines(result)
+            text = self.loss.ytrue_to_lines(result.cpu().detach().numpy())
+
+            print(text)
+            print(label)
+            print(" ")
+            print(" ")
 
             # update CER statistics
             _, (s, i, d) = levenshtein(label, text)
@@ -184,6 +190,13 @@ class TextRecognizer:
 
         print_normal("CER : %.3f; WER : %.3f; SER : %.3f \n" % (cer, wer, ser))
         return wer
+
+    def alternative_loss(self, labels, output):
+        label = labels[1][0]
+        text = self.loss.ytrue_to_lines(output.cpu().detach().numpy())
+        _, (wer_s, wer_i, wer_d) = levenshtein(label.split(), text.split())
+        return (100.0 * (wer_s + wer_i + wer_d)) / len(label.split())     
+
 
     def generateandexecute(self, onlyhand=False):
         """

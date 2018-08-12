@@ -25,7 +25,7 @@ cdef class CTC:
         self.blank_as_separator = blank_as_separator
         self.label_len = max(labels.values()) + 1
 
-    def forward(self, output, label_matrix):
+    def forward(self, output, label):
         # batch_size x probs x width
 
         # assert not torch.isnan(output).any()
@@ -33,6 +33,7 @@ cdef class CTC:
 
         # print(torch.sum(output, dim=1))
         # print(torch.sum(label_matrix, dim=2))
+        label_matrix = label[0]
 
         prob_matrix = output * label_matrix
         prob_matrix = torch.sum(prob_matrix, dim=2)
@@ -142,24 +143,28 @@ cdef class CTC:
         return torch.from_numpy(np.array(matrix))
 
     def process_labels(self, labels, is_cuda=True):
-        var = torch.autograd.Variable(labels).float()
+        var = torch.autograd.Variable(labels[0]).float()
         if is_cuda:
             var = var.cuda()
-        return var
+        return var, labels[1]
 
-    def ytrue_to_lines(self, sequence):
-        # OUTPUT : width x batch_size x num_label
-        width = sequence.shape[0]
-        batch_size = sequence.shape[1]
+    cpdef ytrue_to_lines(self, float[:,:,:] sequence):
+        # OUTPUT : batch_size x width x num_label
+        cdef int width = sequence.shape[1]
+        cdef int batch_size = sequence.shape[0]
 
-        text = ""
-        last_label = -1
+        cdef str text = ""
+        cdef int last_label = -1
+        
+        cdef int time
+        cdef int max_label
+        cdef int i
 
         for time in range(0, width):
 
             max_label = 0
             for i in range(1, self.label_len):
-                if sequence[time][0][i] > sequence[time][0][max_label]:
+                if sequence[0][time][i] > sequence[0][time][max_label]:
                     max_label = i
             
             if max_label != last_label:
@@ -168,7 +173,7 @@ cdef class CTC:
 
         return text
 
-    # def collate(self, batch):
+    def collate(self, batch):
     #     data = [item[0] for item in batch]
     #     max_width = max([d.size()[2] for d in data])
     #
