@@ -5,12 +5,7 @@ import torch
 from socr.models.loss.ctc import CTC
 from socr.nn import IndRNN
 from socr.nn.modules.resnet import ResNet, Bottleneck, BasicBlock
-from socr.utils.setup.build import install_and_import_sru
-
-sru = install_and_import_sru()
-
 from socr.models.convolutional_model import ConvolutionalModel
-from socr.models.loss import CTCTextLoss
 
 
 class resSru(ConvolutionalModel):
@@ -65,7 +60,9 @@ class resSru(ConvolutionalModel):
 
         # if not self.training:
         x = x.transpose(0, 1)
-        x = self.softmax(x)
+
+        if not self.training:
+            x = self.softmax(x)
 
         return x
 

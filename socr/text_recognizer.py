@@ -13,9 +13,7 @@ from socr.utils.rating.word_error_rate import levenshtein
 from socr.dataset import parse_datasets_configuration_file
 from socr.dataset.generator.document_generator_helper import DocumentGeneratorHelper
 from socr.models import get_model_by_name, get_optimizer_by_name
-from socr.text_generator import TextGenerator
 from socr.utils.image import show_pytorch_image
-from socr.utils.language.language_model import LanguageModel
 
 from socr.utils.logging.logger import print_normal, print_warning
 from socr.utils.setup.build import load_default_datasets_cfg_if_not_exist
@@ -155,11 +153,6 @@ class TextRecognizer:
                 result = self.model(torch.autograd.Variable(image.unsqueeze(0).float().cpu()))
 
             text = self.loss.ytrue_to_lines(result.cpu().detach().numpy())
-
-            print(text)
-            print(label)
-            print(" ")
-            print(" ")
 
             # update CER statistics
             _, (s, i, d) = levenshtein(label, text)

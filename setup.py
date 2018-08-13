@@ -17,8 +17,7 @@ extensions = [
     Extension("socr.utils.language.beam", ["socr/utils/language/beam.pyx"]),
     Extension("socr.utils.language.prefix_tree", ["socr/utils/language/prefix_tree.pyx"]),
     Extension("socr.utils.language.language_model", ["socr/utils/language/language_model.pyx"]),
-    Extension("socr.utils.language.word_beam_search", ["socr/utils/language/word_beam_search.pyx"]),
-    Extension("socr.models.loss.ctc", ["socr/models/loss/ctc.pyx"])
+    Extension("socr.utils.language.word_beam_search", ["socr/utils/language/word_beam_search.pyx"])
 ]
 
 
@@ -51,38 +50,10 @@ class InstallRequirements(distutils.cmd.Command):
         assert res.returncode == 0, "Error"
 
 
-class InstallExternals(distutils.cmd.Command):
-    description = "Install externals"
-    user_options = []
-
-    def initialize_options(self):
-        self.cwd = None
-
-    def finalize_options(self):
-        self.cwd = os.getcwd()
-
-    def run(self):
-        self.build_wrapctc()
-
-    def build_wrapctc(self):
-        import git
-
-        if os.path.isdir('submodules/warp-ctc'):
-            shutil.rmtree('submodules/warp-ctc')
-
-        os.makedirs('submodules/warp-ctc', exist_ok=True)
-        git.Git("submodules").clone("https://github.com/t-vi/warp-ctc.git")
-        res = subprocess.run([sys.executable, os.path.join(self.cwd,'submodules/warp-ctc/pytorch_binding/setup.py'), 'build'], cwd='submodules/warp-ctc/pytorch_binding')
-        assert res.returncode == 0, "Error"
-        res = subprocess.run([sys.executable, os.path.join(self.cwd,'submodules/warp-ctc/pytorch_binding/setup.py'), 'install'], cwd='submodules/warp-ctc/pytorch_binding')
-        assert res.returncode == 0, "Error"
-
-
 setup(
     cmdclass={
         'build_ext': build_ext,
         'install_requirements': InstallRequirements,
-        'install_externals': InstallExternals
     },
     ext_modules=cythonize(extensions),
 )

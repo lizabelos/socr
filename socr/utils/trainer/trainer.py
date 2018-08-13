@@ -198,10 +198,6 @@ class Trainer:
             loss_value = self.loss.forward(outputs, self.loss.process_labels(labels, is_cuda=is_cuda))
 
             loss_value_cpu = loss_value.data.cpu().numpy()
-            if loss_value_cpu < 0:
-                sys.stdout.write("\nWarning : negative loss value, " + str(loss_value_cpu) + "\n")
-                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
-                continue
             
             if np.isnan(loss_value_cpu):
                 sys.stdout.write("\nWarning : nan loss value, " + str(loss_value_cpu) + "\n")
