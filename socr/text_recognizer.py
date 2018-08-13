@@ -185,7 +185,7 @@ class TextRecognizer:
         return wer
 
     def alternative_loss(self, labels, output):
-        label = labels[1][0]
+        label = labels[0][1][0]
         text = self.loss.ytrue_to_lines(output.cpu().detach().numpy())
         _, (wer_s, wer_i, wer_d) = levenshtein(label.split(), text.split())
         return (100.0 * (wer_s + wer_i + wer_d)) / len(label.split())     

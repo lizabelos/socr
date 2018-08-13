@@ -126,10 +126,8 @@ class Trainer:
         self.moving_average = MovingAverage(max(data_set.__len__() // batch_size, 1024))
         self.alt_moving_average = MovingAverage(max(data_set.__len__() // batch_size, 1024))
 
-        if hasattr(self.loss, "collate"):
-            loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=self.loss.collate)
-        else:
-            loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4)
+        loader = torch.utils.data.DataLoader(data_set, batch_size=batch_size, shuffle=True, num_workers=4, collate_fn=self.loss.collate)
+
         try:
             if os.path.exists(self.csv_name_acc):
                 append_write = 'a'
@@ -219,8 +217,9 @@ class Trainer:
             loss_value_np = float(loss_value.data.cpu().numpy())
             self.moving_average.addn(loss_value_np)
 
-            if alternative_loss is not None:
-                self.alt_moving_average.addn(alternative_loss(labels, outputs))
+            if (i * batch_size) % 32 == 0:
+                if alternative_loss is not None:
+                    self.alt_moving_average.addn(alternative_loss(labels, outputs))
 
             if (i * batch_size) % 8 == 0:
                 end_time = datetime.now()
