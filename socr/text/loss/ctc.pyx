@@ -13,7 +13,7 @@ from socr.text.codecs.ctc_decoder import CTCDecoder
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np_ctc(float[:,:] params, int[::1] seq, unsigned int blank, float[:,:] grad, unsigned int T):
+cdef np_ctc(float[:,:] prediction, int[::1] sequence, unsigned int blank, float[:,:] grad, unsigned int width):
     """
     CTC loss function.
     params - n x m matrix of n-D probability distributions over m frames. Must
@@ -22,128 +22,116 @@ cdef np_ctc(float[:,:] params, int[::1] seq, unsigned int blank, float[:,:] grad
     Returns objective and gradient.
     """
 
-    cdef unsigned int seqLen = seq.shape[0] # Length of label sequence (# phones)
-    cdef unsigned int numphones = params.shape[0] # Number of labels
-    cdef unsigned int L = 2*seqLen + 1 # Length of label sequence with blanks
+    cdef unsigned int sequence_length = sequence.shape[0] # Length of label sequence (# phones)
+    cdef unsigned int numphones = prediction.shape[0] # Number of labels
+    cdef unsigned int sequence_with_blank_length = 2*sequence_length + 1 # Length of label sequence with blanks
     # cdef unsigned int T = params.shape[1] # Length of utterance (time)
 
-    cdef float[:,:] alphas = np.zeros((L,T), dtype='float32')
-    cdef float[:,:] betas = np.zeros((L,T), dtype='float32')
-    cdef float[:,:] ab = np.empty((L,T), dtype='float32')
+    cdef float[:,:] alphas = np.zeros((sequence_with_blank_length,width), dtype='float32')
+    cdef float[:,:] betas = np.zeros((sequence_with_blank_length,width), dtype='float32')
+    cdef float[:,:] ab = np.empty((sequence_with_blank_length,width), dtype='float32')
     # cdef float[:,:] grad = np.zeros((numphones,T), dtype='float32')
     cdef float[:,:] grad_v = grad
-    cdef float[:] absum = np.empty(T, dtype='float32')
+    cdef float[:] absum = np.empty(width, dtype='float32')
 
-    cdef unsigned int start, end
     cdef unsigned int t, s, l
     cdef float c, llForward, llBackward, llDiff, tmp
 
     try:
         # Initialize alphas and forward pass
-        alphas[0,0] = params[blank,0]
-        alphas[1,0] = params[seq[0],0]
+        alphas[0,0] = prediction[blank,0]
+        alphas[1,0] = prediction[sequence[0],0]
         c = alphas[0,0] + alphas[1,0]
         alphas[0,0] = alphas[0,0] / c
         alphas[1,0] = alphas[1,0] / c
         llForward = math.log(c)
-        for t in range(1,T):
-            start = 2*(T-t)
-            if L <= start:
-                start = 0
-            else:
-                start = L-start
-            end = min(2*t+2,L)
-            for s in range(start,L):
+
+        for t in range(1, width):
+            for s in range(0,sequence_with_blank_length):
                 l = (s-1)/2
                 # blank
                 if s%2 == 0:
                     if s==0:
-                        alphas[s,t] = alphas[s,t-1] * params[blank,t]
+                        alphas[s,t] = alphas[s,t-1] * prediction[blank,t]
                     else:
-                        alphas[s,t] = (alphas[s,t-1] + alphas[s-1,t-1]) * params[blank,t]
+                        alphas[s,t] = (alphas[s,t-1] + alphas[s-1,t-1]) * prediction[blank,t]
                 # same label twice
-                elif s == 1 or seq[l] == seq[l-1]:
-                    alphas[s,t] = (alphas[s,t-1] + alphas[s-1,t-1]) * params[seq[l],t]
+                elif s == 1 or sequence[l] == sequence[l-1]:
+                    alphas[s,t] = (alphas[s,t-1] + alphas[s-1,t-1]) * prediction[sequence[l],t]
                 else:
                     alphas[s,t] = (alphas[s,t-1] + alphas[s-1,t-1] + alphas[s-2,t-1]) \
-                                  * params[seq[l],t]
+                                  * prediction[sequence[l],t]
 
             # normalize at current time (prevent underflow)
             c = 0.0
-            for s in range(start,end):
+            for s in range(0,sequence_with_blank_length):
                 c += alphas[s,t]
-            for s in range(start,end):
+            for s in range(0,sequence_with_blank_length):
                 alphas[s,t] = alphas[s,t] / c
             llForward += math.log(c)
 
         # Initialize betas and backwards pass
-        betas[L-1,T-1] = params[blank,T-1]
-        betas[L-2,T-1] = params[seq[seqLen-1],T-1]
-        c = betas[L-1,T-1] + betas[L-2,T-1]
-        betas[L-1,T-1] = betas[L-1,T-1] / c
-        betas[L-2,T-1] = betas[L-2,T-1] / c
+        betas[sequence_with_blank_length-1,width-1] = prediction[blank,width-1]
+        betas[sequence_with_blank_length-2,width-1] = prediction[sequence[sequence_length-1],width-1]
+        c = betas[sequence_with_blank_length-1,width-1] + betas[sequence_with_blank_length-2,width-1]
+        betas[sequence_with_blank_length-1,width-1] = betas[sequence_with_blank_length-1,width-1] / c
+        betas[sequence_with_blank_length-2,width-1] = betas[sequence_with_blank_length-2,width-1] / c
         llBackward = math.log(c)
-        for t in range(T-1,0,-1):
-            t = t-1
-            start = 2*(T-t)
-            if L <= start:
-                start = 0
-            else:
-                start = L-start
-            end = min(2*t+2,L)
-            for s in range(end,0,-1):
+        for t in range(width-1,0,-1):
+            t = t - 1
+            for s in range(sequence_with_blank_length,0,-1):
                 s = s-1
                 l = (s-1)/2
                 # blank
                 if s%2 == 0:
-                    if s == L-1:
-                        betas[s,t] = betas[s,t+1] * params[blank,t]
+                    if s == sequence_with_blank_length-1:
+                        betas[s,t] = betas[s,t+1] * prediction[blank,t]
                     else:
-                        betas[s,t] = (betas[s,t+1] + betas[s+1,t+1]) * params[blank,t]
+                        betas[s,t] = (betas[s,t+1] + betas[s+1,t+1]) * prediction[blank,t]
                 # same label twice
-                elif s == L-2 or seq[l] == seq[l+1]:
-                    betas[s,t] = (betas[s,t+1] + betas[s+1,t+1]) * params[seq[l],t]
+                elif s == sequence_with_blank_length-2 or sequence[l] == sequence[l+1]:
+                    betas[s,t] = (betas[s,t+1] + betas[s+1,t+1]) * prediction[sequence[l],t]
                 else:
                     betas[s,t] = (betas[s,t+1] + betas[s+1,t+1] + betas[s+2,t+1]) \
-                                 * params[seq[l],t]
+                                 * prediction[sequence[l],t]
 
             c = 0.0
-            for s in range(start,end):
+            for s in range(0,sequence_with_blank_length):
                 c += betas[s,t]
-            for s in range(start,end):
+            for s in range(0,sequence_with_blank_length):
                 betas[s,t] = betas[s,t] / c
             llBackward += math.log(c)
 
         # Compute gradient with respect to unnormalized input parameters
-        for t in range(T):
-            for s in range(L):
+        for t in range(width):
+            for s in range(sequence_with_blank_length):
                 ab[s,t] = alphas[s,t]*betas[s,t]
-        for s in range(L):
+        for s in range(sequence_with_blank_length):
             # blank
             if s%2 == 0:
-                for t in range(T):
+                for t in range(width):
                     grad_v[blank,t] += ab[s,t]
                     if ab[s,t] != 0:
-                        ab[s,t] = ab[s,t]/params[blank,t]
+                        ab[s,t] = ab[s,t]/prediction[blank,t]
             else:
-                for t in range(T):
-                    grad_v[seq[(s-1)/2],t] += ab[s,t]
+                for t in range(width):
+                    grad_v[sequence[(s-1)/2],t] += ab[s,t]
                     if ab[s,t] != 0:
-                        ab[s,t] = ab[s,t]/(params[seq[(s-1)/2],t])
+                        ab[s,t] = ab[s,t]/(prediction[sequence[(s-1)/2],t])
 
-        for t in range(T):
+        for t in range(width):
             absum[t] = 0
-            for s in range(L):
+            for s in range(sequence_with_blank_length):
                 absum[t] += ab[s,t]
 
         # grad = params - grad / (params * absum)
-        for t in range(T):
+        for t in range(width):
             for s in range(numphones):
-                tmp = (params[s,t]*absum[t])
+                tmp = (prediction[s,t]*absum[t])
                 if tmp > 0:
-                    grad_v[s,t] = params[s,t] - grad_v[s,t] / tmp
+                    grad_v[s,t] = prediction[s,t] - grad_v[s,t] / tmp
                 else:
-                    grad_v[s,t] = params[s,t]
+                    grad_v[s,t] = prediction[s,t]
 
     except (FloatingPointError,ZeroDivisionError) as e:
         print_error("Zero Division in CTC")
