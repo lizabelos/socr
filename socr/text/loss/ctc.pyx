@@ -186,8 +186,14 @@ class CTC(torch.nn.Module):
 
         self.labels = labels
         self.inv_labels = {v: k for k, v in self.labels.items()}
-        self.width_transform = width_transform
         self.label_len = max(labels.values()) + 1
+
+        for i in range(0, self.label_len):
+            if not i in self.inv_labels:
+                print_error("CTC Key error : " + str(i))
+                assert False
+
+        self.width_transform = width_transform
         self.softmax = torch.nn.Softmax(dim=2)
         self.ctc = CTCFunction()
         self.is_gpu = False

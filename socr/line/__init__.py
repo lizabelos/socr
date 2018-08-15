@@ -19,6 +19,15 @@ from socr.utils.trainer import Trainer
 from socr.utils.image import show_numpy_image, image_pillow_to_numpy, image_numpy_to_pillow, image_numpy_to_pillow_bw
 
 
+class LineLocalizatorConfiguration:
+
+    def __init__(self):
+        pass
+
+    def parse_settings(self, name):
+        pass
+
+
 class LineLocalizator:
     """
     This is the main class of the line localizator.
