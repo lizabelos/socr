@@ -53,7 +53,7 @@ class TextRecognizer:
             analyser.parse_xml_file("resources/texts/fr.xml.gz")
             analyser.parse_xml_file("resources/texts/en.xml.gz")
 
-            self.labels = analyser.get_bests(num=8192)
+            self.labels = analyser.get_bests(num=int(self.settings.get("text", "max_gram")))
 
         else:
             print_error(str(self.ngram) + "-gram not implemented !")
