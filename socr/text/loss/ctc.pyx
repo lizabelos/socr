@@ -1,10 +1,11 @@
 from libc cimport math
 import cython
+from cython.parallel import parallel, prange
 import numpy as np
 np.seterr(divide='raise',invalid='raise')
 import torch
 
-from socr.utils.logger import print_normal, print_warning
+from socr.utils.logger import print_normal, print_warning, print_error
 from socr.text.codecs.ctc_decoder import CTCDecoder
 
 
@@ -12,7 +13,7 @@ from socr.text.codecs.ctc_decoder import CTCDecoder
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np_ctc(float[:,:] params, int[::1] seq, unsigned int blank=0):
+cdef np_ctc(float[:,:] params, int[::1] seq, unsigned int blank, float[:,:] grad, unsigned int T):
     """
     CTC loss function.
     params - n x m matrix of n-D probability distributions over m frames. Must
@@ -24,12 +25,12 @@ cdef np_ctc(float[:,:] params, int[::1] seq, unsigned int blank=0):
     cdef unsigned int seqLen = seq.shape[0] # Length of label sequence (# phones)
     cdef unsigned int numphones = params.shape[0] # Number of labels
     cdef unsigned int L = 2*seqLen + 1 # Length of label sequence with blanks
-    cdef unsigned int T = params.shape[1] # Length of utterance (time)
+    # cdef unsigned int T = params.shape[1] # Length of utterance (time)
 
     cdef float[:,:] alphas = np.zeros((L,T), dtype='float32')
     cdef float[:,:] betas = np.zeros((L,T), dtype='float32')
     cdef float[:,:] ab = np.empty((L,T), dtype='float32')
-    cdef float[:,:] grad = np.zeros((numphones,T), dtype='float32')
+    # cdef float[:,:] grad = np.zeros((numphones,T), dtype='float32')
     cdef float[:,:] grad_v = grad
     cdef float[:] absum = np.empty(T, dtype='float32')
 
@@ -145,30 +146,30 @@ cdef np_ctc(float[:,:] params, int[::1] seq, unsigned int blank=0):
                     grad_v[s,t] = params[s,t]
 
     except (FloatingPointError,ZeroDivisionError) as e:
-        return -llForward,grad,True
+        print_error("Zero Division in CTC")
+        return -llForward
 
 
-    return -llForward,grad,False
+    return -llForward
 
 
-cpdef parallal_np_ctc(ctx, t_output, label, blank, is_gpu):
+cpdef parallal_np_ctc(ctx, t_output, list label, blank, is_gpu, width_transform):
     output = t_output.cpu().detach().numpy().astype('float32')
-
-    gradients = []
-    costs = []
 
     cdef int batch_size = output.shape[0]
 
+    cdef float[:] cost = np.zeros((batch_size), dtype='float32')
+    cdef float[:,:,:] grad = np.zeros(output.shape, dtype='float32')
+
+    cdef int i
+    cdef int w
+
     for i in range(0, batch_size):
-        cost, gradient, _ = np_ctc(output[i], label[i][0].cpu().detach().numpy().astype('int32'), blank)
-        gradients.append(np.array(gradient))
-        costs.append(cost)
+        w = width_transform(label[i][2])
+        cost[i] = np_ctc(output[i], label[i][0].cpu().detach().numpy().astype('int32'), blank, grad[i], width_transform(label[i][2])) / w
 
-    total_cost = np.stack(costs)
-    total_gradient = np.stack(gradients)
-
-    total_cost = torch.autograd.Variable(torch.from_numpy(total_cost)).float()
-    total_gradient = torch.autograd.Variable(torch.from_numpy(total_gradient)).float()
+    total_cost = torch.autograd.Variable(torch.from_numpy(np.array(cost))).float()
+    total_gradient = torch.autograd.Variable(torch.from_numpy(np.array(grad))).float()
 
     if is_gpu:
         total_cost = total_cost.cuda()
@@ -181,13 +182,13 @@ cpdef parallal_np_ctc(ctx, t_output, label, blank, is_gpu):
 class CTCFunction(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, t_output, label, blank, is_gpu):
-        return parallal_np_ctc(ctx, t_output, label, blank, is_gpu)
+    def forward(ctx, t_output, label, blank, is_gpu, width_transform):
+        return parallal_np_ctc(ctx, t_output, label, blank, is_gpu, width_transform)
 
     @staticmethod
     def backward(ctx, grad_output):
         gradient, = ctx.saved_tensors
-        return gradient, None, None, None
+        return gradient, None, None, None, None
 
 
 class CTC(torch.nn.Module):
@@ -208,7 +209,7 @@ class CTC(torch.nn.Module):
         output = self.softmax(output)
         output = output.transpose(1, 2)
 
-        return self.ctc.apply(output, label, self.labels[""], self.is_gpu)
+        return self.ctc.apply(output, label, self.labels[""], self.is_gpu, self.width_transform)
 
     def cuda(self, **kwargs):
         self.is_gpu = True

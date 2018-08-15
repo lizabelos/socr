@@ -64,7 +64,7 @@ class IAMWashington(Dataset):
 
         image = image_pillow_to_numpy(image)
 
-        return torch.from_numpy(image), (self.loss.preprocess_label(text, width * self.height // height), text)
+        return torch.from_numpy(image), (self.loss.preprocess_label(text, width * self.height // height), text, image.shape[2])
 
     def __len__(self):
         return len(self.labels)

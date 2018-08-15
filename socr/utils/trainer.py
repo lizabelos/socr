@@ -254,7 +254,7 @@ class Trainer:
                 self.start_time = end_time
                 self.elapsed = self.elapsed + diff.total_seconds()
                 sys.stdout.write(TerminalColors.BOLD + '[%d, %5d] ' % (self.epoch + 1, (i * batch_size) + 1) + TerminalColors.ENDC)
-                sys.stdout.write('lr: %.8f; loss: %.4f ; aloss: %.4f ; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), self.alt_moving_average.moving_average(), self.elapsed / 60))
+                sys.stdout.write('lr: %.8f; loss: %.4f ; aloss: %.4f ; curr: %.4f ; time : %dmn\r' % (self.optimizer.state_dict()['param_groups'][0]['lr'], self.moving_average.moving_average(), self.alt_moving_average.moving_average(), loss_value_cpu, self.elapsed / 60))
 
         self.epoch = self.epoch + 1
         # self.adaptative_optimizer.step()

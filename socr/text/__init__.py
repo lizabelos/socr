@@ -38,8 +38,7 @@ class TextRecognizer:
             with open("resources/characters.txt", "r") as content_file:
                 lst = content_file.read() + " "
 
-            self.labels = {}
-            self.labels[""] = 0
+            self.labels = {"": 0}
             for i in range(0, len(lst)):
                 self.labels[lst[i]] = i + 1
 
@@ -50,6 +49,7 @@ class TextRecognizer:
             analyser.parse_xml_file("resources/texts/en.xml.gz")
 
             self.labels = analyser.get_bests(num=8192)
+
 
         # with open("resources/word_characters.txt", "r") as content_file:
         #    self.word_labels = content_file.read()
@@ -66,8 +66,9 @@ class TextRecognizer:
             self.model = self.model.cpu()
             self.loss = self.loss.cpu()
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
-        self.trainer = Trainer(self.model, self.loss, self.optimizer, name, clip_gradient=1)
+        print_normal("Using SGD with a Learning Rate of " + str(lr))
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
+        self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
         load_default_datasets_cfg_if_not_exist()
         self.database_helper = DocumentGeneratorHelper()
@@ -179,8 +180,12 @@ class TextRecognizer:
         return wer
 
     def alternative_loss(self, labels, output):
-        label = labels[0][1][0]
+        label = labels[0][1]
         text = self.loss.ytrue_to_lines(output.cpu().detach().numpy())
+        print("")
+        print(label)
+        print(text)
+        print("")
         _, (wer_s, wer_i, wer_d) = levenshtein(label.split(), text.split())
         return (100.0 * (wer_s + wer_i + wer_d)) / len(label.split())
 

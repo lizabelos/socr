@@ -79,8 +79,7 @@ class LineGeneratedSet(Dataset):
         image_pillow, label = self.generate_image_with_label(index)
         image = image_pillow_to_numpy(image_pillow)
 
-
-        return torch.from_numpy(image), self.loss.preprocess_label(label), label
+        return torch.from_numpy(image), (self.loss.preprocess_label(label, image.shape[2]), label, image.shape[2])
 
     def __len__(self):
         return self.document_generator.helper.get_number_font() * 5
@@ -88,14 +87,14 @@ class LineGeneratedSet(Dataset):
     def generate_image_with_label(self, index):
         index = index % self.document_generator.helper.get_number_font()
 
-        image, document, text = self.document_generator.generate(index)
+        image, document = self.document_generator.generate(index)
         width, height = image.size
         if self.width is not None:
             image = image.resize((self.width, self.height), Image.ANTIALIAS)
         else:
             image = image.resize((width * self.height // height, self.height), Image.ANTIALIAS)
 
-        return image, (document, text)
+        return image, document
 
     def get_corpus(self):
         return ". ".join(self.document_generator.helper.preloaded_texts)
