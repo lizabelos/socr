@@ -170,12 +170,15 @@ cpdef parallal_np_ctc(ctx, t_output, list label, blank, is_gpu, width_transform)
 class CTCFunction(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, t_output, label, blank, is_gpu, width_transform):
-        return parallal_np_ctc(ctx, t_output, label, blank, is_gpu, width_transform)
+    def forward(ctx, output, label, blank, is_gpu, width_transform):
+        output = torch.nn.functional.softmax(output, dim=2)
+        output = output.transpose(1, 2)
+        return parallal_np_ctc(ctx, output, label, blank, is_gpu, width_transform)
 
     @staticmethod
     def backward(ctx, grad_output):
         gradient, = ctx.saved_tensors
+        gradient = gradient.transpose(1, 2)
         return gradient, None, None, None, None
 
 
@@ -200,9 +203,6 @@ class CTC(torch.nn.Module):
         self.decoder = CTCDecoder(self.inv_labels, self.label_len)
 
     def forward(self, output, label):
-        output = self.softmax(output)
-        output = output.transpose(1, 2)
-
         return self.ctc.apply(output, label, self.labels[""], self.is_gpu, self.width_transform)
 
     def cuda(self, **kwargs):
