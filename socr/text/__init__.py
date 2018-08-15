@@ -1,4 +1,5 @@
 import sys
+from configparser import ConfigParser
 from random import randint
 
 import numpy as np
@@ -11,7 +12,7 @@ from socr.text.rating.word_error_rate import levenshtein
 from socr.text.dataset.document_generator_helper import DocumentGeneratorHelper
 from socr.text.models import get_model_by_name
 from socr.utils.image import show_pytorch_image
-from socr.utils.logger import print_normal, print_warning
+from socr.utils.logger import print_normal, print_warning, print_error
 from socr.utils.dataset import parse_datasets_configuration_file
 from socr.utils import load_default_datasets_cfg_if_not_exist
 from socr.utils.trainer import Trainer
@@ -32,8 +33,12 @@ class TextRecognizer:
         :param name: The name where to save the model
         :param is_cuda: True to use cuda
         """
-        use_bigram = False
-        if not use_bigram:
+        self.settings = ConfigParser()
+        self.settings.read("settings.cfg")
+
+        self.ngram = int(self.settings.get("text", "ngram"))
+
+        if self.ngram == 1:
             print_normal("Using 1-Gram")
             with open("resources/characters.txt", "r") as content_file:
                 lst = content_file.read() + " "
@@ -42,13 +47,17 @@ class TextRecognizer:
             for i in range(0, len(lst)):
                 self.labels[lst[i]] = i + 1
 
-        else:
+        elif self.ngram == 2:
             print_normal("Using 2-Gram")
             analyser = N2GramAnalyzer()
             analyser.parse_xml_file("resources/texts/fr.xml.gz")
             analyser.parse_xml_file("resources/texts/en.xml.gz")
 
             self.labels = analyser.get_bests(num=8192)
+
+        else:
+            print_error(str(self.ngram) + "-gram not implemented !")
+            raise NotImplementedError()
 
 
         # with open("resources/word_characters.txt", "r") as content_file:
@@ -66,8 +75,8 @@ class TextRecognizer:
             self.model = self.model.cpu()
             self.loss = self.loss.cpu()
 
-        print_normal("Using SGD with a Learning Rate of " + str(lr))
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=lr)
+        print_normal("Using Adam with a Learning Rate of " + str(lr))
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
         self.trainer = Trainer(self.model, self.loss, self.optimizer, name)
 
         load_default_datasets_cfg_if_not_exist()
