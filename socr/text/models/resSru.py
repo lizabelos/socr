@@ -5,8 +5,9 @@ import torch
 from socr.text.loss.ctc import CTC
 from socr.text.modules.indrnn import IndRNN
 from socr.text.modules.resnet import ResNet, Bottleneck, BasicBlock
+from socr.utils.logger import print_normal
 
-import sru
+# import sru
 
 
 class resSru(torch.nn.Module):
@@ -17,6 +18,8 @@ class resSru(torch.nn.Module):
         self.labels = labels
         self.output_numbers =  max(labels.values()) + 1
         self.rnn_size = 256
+
+        print_normal("Creating resSru with " + str(self.output_numbers) + " labels")
 
         self.activation = torch.nn.ReLU()
 
@@ -29,15 +32,13 @@ class resSru(torch.nn.Module):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        # self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, num_layers=2, bidirectional=True, dropout=0.3)
+        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.output_numbers, num_layers=2, bidirectional=True, dropout=0.3)
         # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
 
         # print(self.convolutions_output_size)
 
-        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], 256, num_layers=6,
-                           bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
-
-        self.fc = torch.nn.Linear(2 * self.rnn_size, self.output_numbers)
+        # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.output_numbers, num_layers=6,
+        #                    bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
         self.softmax = torch.nn.Softmax(dim = 2)
 
@@ -69,7 +70,8 @@ class resSru(torch.nn.Module):
         x = torch.transpose(x, 0, 1).contiguous()
 
         x, _ = self.rnn(x)
-        # x = self.fc(x)
+        x = x.view(width, batch_size, self.output_numbers, 2)
+        x = torch.sum(x, dim=3)
 
         # if not self.training:
         x = x.transpose(0, 1)

@@ -106,6 +106,7 @@ cdef np_ctc(float[:,:] prediction, int[::1] sequence, unsigned int blank, float[
         for t in range(width):
             for s in range(sequence_with_blank_length):
                 ab[s,t] = alphas[s,t]*betas[s,t]
+
         for s in range(sequence_with_blank_length):
             # blank
             if s%2 == 0:
@@ -182,6 +183,38 @@ class CTCFunction(torch.autograd.Function):
         return gradient, None, None, None, None
 
 
+cpdef text_to_label(dict labels, str text):
+    cdef list text_label = []
+    cdef int i
+    cdef int j
+    cdef int index
+    cdef int remaining
+    cdef int last_length = 0
+
+    for i in range(0, len(text)):
+        index = -1
+
+        remaining = len(text) - i + 1
+        for j in range(1, remaining):
+            crop = text[i:i+j]
+
+            if crop in labels:
+                index = labels[crop]
+                last_length = len(crop)
+
+        if index!= -1:
+            text_label.append(index)
+        else:
+            if len(text[i:]) > last_length:
+                print_warning("Invalid key : " + text[i:])
+            last_length = last_length - 1
+
+    if len(text_label) == 0:
+        print_warning("Text label of length 0")
+        return [labels[""]]
+
+    return text_label
+
 class CTC(torch.nn.Module):
 
     def __init__(self, labels, width_transform):
@@ -215,28 +248,8 @@ class CTC(torch.nn.Module):
         print_normal("Using CTCLoss with CPU")
         return self
 
-    def text_to_label(self, text):
-
-        text_label = []
-
-        for i in range(1, len(text)):
-            c1 = text[i - 1]
-            c2 = text[i]
-
-            if c1 in self.labels:
-                index = self.labels[c1]
-                text_label.append(index)
-            elif c1 + c2 in self.labels:
-                index = self.labels[c1 + c2]
-                text_label.append(index)
-            else:
-                print_warning("Invalid key : " + c1 + c2)
-
-        if len(text_label) == 0:
-            print_warning("Text label of length 0")
-            return [self.labels[""]]
-
-        return text_label
+    def text_to_label(self, str text):
+        return text_to_label(self.labels, text)
 
     def preprocess_label(self, text, width):
         width = int(self.width_transform(width))

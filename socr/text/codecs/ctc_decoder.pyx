@@ -9,6 +9,8 @@ cdef class CTCDecoder:
 
     cpdef decode(self, float[:,:,:] sequence):
         # OUTPUT : batch_size x width x num_label
+        assert sequence.shape[2] == self.label_len
+
         cdef int width = sequence.shape[1]
         cdef int batch_size = sequence.shape[0]
 

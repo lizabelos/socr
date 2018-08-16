@@ -11,6 +11,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from socr.utils.dataset import parse_datasets_configuration_file
+from socr.line.dataset.icdar_document_set import ICDARDocumentEvalSet
 from socr.line.models import get_model_by_name
 from socr.utils.image import save_connected_components
 from socr.utils.logger import print_warning, print_normal
