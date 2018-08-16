@@ -206,7 +206,7 @@ cpdef text_to_label(dict labels, str text):
             text_label.append(index)
         else:
             if len(text[i:]) > last_length:
-                print_warning("Invalid key : " + text[i:])
+                raise Exception
             last_length = last_length - 1
 
     if len(text_label) == 0:

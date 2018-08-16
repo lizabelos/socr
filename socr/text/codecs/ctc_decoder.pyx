@@ -1,3 +1,21 @@
+cdef class CTCNode:
+
+    cdef str c
+    cdef list childs
+    cdef str next
+
+    def __init__(self, c):
+        self.c = c
+        self.childs = []
+
+        self.next = ""
+        if len(self.c) > 1:
+            self.next = self.c[1:]
+
+    def create_childs(self, sequence, i):
+        pass
+
+
 cdef class CTCDecoder:
 
     cdef dict inv_labels
@@ -33,3 +51,16 @@ cdef class CTCDecoder:
                 last_label = max_label
 
         return text
+
+    cpdef decode2(self, float[:,:,:] sequence):
+        assert sequence.shape[2] == self.label_len
+
+        cdef int width = sequence.shape[1]
+        cdef int batch_size = sequence.shape[0]
+
+
+
+        for time in range(0, width):
+
+
+

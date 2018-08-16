@@ -17,6 +17,7 @@ extensions = [
     Extension("socr.text.codecs.language.prefix_tree", ["socr/text/codecs/language/prefix_tree.pyx"]),
     Extension("socr.text.codecs.language.language_model", ["socr/text/codecs/language/language_model.pyx"]),
     Extension("socr.text.codecs.language.word_beam_search", ["socr/text/codecs/language/word_beam_search.pyx"]),
+    Extension("socr.text.codecs.language.ngram", ["socr/text/codecs/language/ngram.pyx"]),
     Extension("socr.text.loss.ctc", ["socr/text/loss/ctc.pyx"], extra_compile_args=['-fopenmp'], extra_link_args=['-fopenmp']),
 ]
 

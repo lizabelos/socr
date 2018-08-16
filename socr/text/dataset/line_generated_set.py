@@ -79,7 +79,10 @@ class LineGeneratedSet(Dataset):
         image_pillow, label = self.generate_image_with_label(index)
         image = image_pillow_to_numpy(image_pillow)
 
-        return torch.from_numpy(image), (self.loss.preprocess_label(label, image.shape[2]), label, image.shape[2])
+        try:
+            return torch.from_numpy(image), (self.loss.preprocess_label(label, image.shape[2]), label, image.shape[2])
+        except:
+            return self.__getitem__(index)
 
     def __len__(self):
         return self.document_generator.helper.get_number_font() * 5
