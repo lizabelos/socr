@@ -179,13 +179,14 @@ class IndRNN(nn.Module):
         >>> output = rnn(input, h0)
     """
 
-    def __init__(self, input_size, hidden_size, n_layer=1, batch_norm=False,
+    def __init__(self, input_size, hidden_size, n_layer=1, batch_norm=False, dropout=0,
                  batch_first=False, bidirectional=False,
                  hidden_inits=None, recurrent_inits=None,
                  **kwargs):
         super(IndRNN, self).__init__()
         self.hidden_size = hidden_size
         self.batch_norm = batch_norm
+        self.dropout = dropout
         self.n_layer = n_layer
         self.batch_first = batch_first
         self.bidirectional = bidirectional
@@ -209,11 +210,7 @@ class IndRNN(nn.Module):
             in_size = input_size if i == 0 else hidden_size * num_directions
             for dir in range(num_directions):
                 directions.append(
-                    torch.nn.utils.weight_norm(
-                        torch.nn.utils.weight_norm(
-                            IndRNNCell(in_size, hidden_size, **kwargs), "weight_ih"
-                        ), "weight_hh"
-                    )
+                    IndRNNCell(in_size, hidden_size, **kwargs)
                 )
             cells.append(nn.ModuleList(directions))
         self.cells = nn.ModuleList(cells)
@@ -224,11 +221,18 @@ class IndRNN(nn.Module):
                 bns.append(nn.BatchNorm1d(hidden_size * num_directions))
             self.bns = nn.ModuleList(bns)
 
+        if dropout != 0:
+            drop = []
+            for i in range(n_layer):
+                drop.append(nn.Dropout(dropout))
+            self.drop = nn.ModuleList(drop)
+
         h0 = torch.zeros(hidden_size * num_directions)
         self.register_buffer('h0', torch.autograd.Variable(h0))
 
     def forward(self, x, hidden=None):
         batch_norm = self.batch_norm
+        dropout = self.dropout
         time_index = self.time_index
         batch_index = self.batch_index
         num_directions = 2 if self.bidirectional else 1
@@ -263,4 +267,8 @@ class IndRNN(nn.Module):
                     x = self.bns[i](x.permute(batch_index, 2, time_index).contiguous()).permute(0, 2, 1)
                 else:
                     x = self.bns[i](x.permute(batch_index, 2, time_index).contiguous()).permute(2, 0, 1)
+
+            if dropout != 0:
+                x = self.drop[i](x)
+
         return x.squeeze(2), torch.cat(hiddens, -1)

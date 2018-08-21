@@ -15,7 +15,7 @@ class resRnn(torch.nn.Module):
 
         self.labels = labels
         self.output_numbers =  max(labels.values()) + 1
-        self.rnn_size = 256
+        self.rnn_size = self.output_numbers
 
         print_normal("Creating resSru with " + str(self.output_numbers) + " labels")
 
@@ -28,13 +28,8 @@ class resRnn(torch.nn.Module):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, num_layers=1, bidirectional=True)
-        # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, n_layer=6, bidirectional=True, batch_norm=False, batch_first=True, nonlinearity='tanh')
+        self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, n_layer=3, bidirectional=True, batch_norm=True, batch_first=True, dropout=0.2, nonlinearity='tanh')
         self.fc = torch.nn.Linear(2 * self.rnn_size, self.output_numbers)
-        # print(self.convolutions_output_size)
-
-        # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.output_numbers, num_layers=6,
-        #                    bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
         self.softmax = torch.nn.Softmax(dim=2)
 
@@ -78,7 +73,7 @@ class resRnn(torch.nn.Module):
         return None
 
     def get_input_image_height(self):
-        return 64
+        return 48
 
     def create_loss(self):
         return CTC(self.labels, lambda x: self.conv_output_size(self.conv_output_size(x, 7, 3, 2), 3, 1, 2))
