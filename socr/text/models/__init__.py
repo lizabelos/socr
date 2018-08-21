@@ -1,6 +1,6 @@
-from .resSru import resSru
+from .resRnn import resRnn
 
 def get_model_by_name(name):
     return {
-        "resSru": resSru,
+        "resRnn": resRnn,
 }[name]

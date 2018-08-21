@@ -58,9 +58,6 @@ cdef class CTCDecoder:
         cdef int width = sequence.shape[1]
         cdef int batch_size = sequence.shape[0]
 
-
-
-        for time in range(0, width):
-
+        return
 
 

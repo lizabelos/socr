@@ -208,7 +208,13 @@ class IndRNN(nn.Module):
                 kwargs["hidden_init"] = hidden_inits[i]
             in_size = input_size if i == 0 else hidden_size * num_directions
             for dir in range(num_directions):
-                directions.append(IndRNNCell(in_size, hidden_size, **kwargs))
+                directions.append(
+                    torch.nn.utils.weight_norm(
+                        torch.nn.utils.weight_norm(
+                            IndRNNCell(in_size, hidden_size, **kwargs), "weight_ih"
+                        ), "weight_hh"
+                    )
+                )
             cells.append(nn.ModuleList(directions))
         self.cells = nn.ModuleList(cells)
 

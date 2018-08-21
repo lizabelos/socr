@@ -7,10 +7,8 @@ from socr.text.modules.indrnn import IndRNN
 from socr.text.modules.resnet import ResNet, Bottleneck, BasicBlock
 from socr.utils.logger import print_normal
 
-# import sru
 
-
-class resSru(torch.nn.Module):
+class resRnn(torch.nn.Module):
 
     def __init__(self, labels):
         super().__init__()
@@ -21,8 +19,6 @@ class resSru(torch.nn.Module):
 
         print_normal("Creating resSru with " + str(self.output_numbers) + " labels")
 
-        self.activation = torch.nn.ReLU()
-
         self.convolutions = torch.nn.Sequential(OrderedDict([
             ('conv1', torch.nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)),
             ('bn1', torch.nn.BatchNorm2d(64)),
@@ -32,15 +28,15 @@ class resSru(torch.nn.Module):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.output_numbers, num_layers=2, bidirectional=True, dropout=0.3)
-        # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], 128, n_layer=3, bidirectional=True, batch_norm=True)
-
+        self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, num_layers=1, bidirectional=True)
+        # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, n_layer=6, bidirectional=True, batch_norm=False, batch_first=True, nonlinearity='tanh')
+        self.fc = torch.nn.Linear(2 * self.rnn_size, self.output_numbers)
         # print(self.convolutions_output_size)
 
         # self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.output_numbers, num_layers=6,
         #                    bidirectional=True, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
 
-        self.softmax = torch.nn.Softmax(dim = 2)
+        self.softmax = torch.nn.Softmax(dim=2)
 
     def get_cnn_output_size(self):
         shape = [1, 3, self.get_input_image_height(), self.get_input_image_width()]
@@ -67,14 +63,11 @@ class resSru(torch.nn.Module):
         # x is (batch_size x hidden_size x width)
         x = torch.transpose(x, 1, 2)
         # x is (batch_size x width x hidden_size)
-        x = torch.transpose(x, 0, 1).contiguous()
 
         x, _ = self.rnn(x)
-        x = x.view(width, batch_size, self.output_numbers, 2)
-        x = torch.sum(x, dim=3)
-
-        # if not self.training:
-        x = x.transpose(0, 1)
+        x = self.fc(x)
+        # x = x.view(width, batch_size, self.output_numbers, 2)
+        # x = torch.sum(x, dim=3)
 
         if not self.training:
             x = self.softmax(x)

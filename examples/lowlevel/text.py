@@ -1,10 +1,10 @@
 import torch
 
-from socr.text.models.resSru import resSru
+from socr.text.models.resRnn import resRnn
 
 labels = {"": 0, "a": 1, "b": 2, "c": 3}
 
-model = resSru(labels)
+model = resRnn(labels)
 # model.load_state_dict(...)
 
 loss = model.create_loss()

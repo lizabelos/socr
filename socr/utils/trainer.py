@@ -226,12 +226,12 @@ class Trainer:
             
             if np.isnan(loss_value_cpu):
                 sys.stdout.write("\nWarning : nan loss value, " + str(loss_value_cpu) + "\n")
-                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+                # sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
                 continue
             
             if np.isinf(loss_value_cpu):
                 sys.stdout.write("\nWarning : inf loss value, " + str(loss_value_cpu) + "\n")
-                sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
+                # sys.stdout.write("With label(s) : " + str(self.loss.process_labels(labels)) + "\n")
                 continue
 
             loss_value.backward()

@@ -23,7 +23,7 @@ class TextRecognizer:
     This is the main class of the text recognizer
     """
 
-    def __init__(self, model_name="resSru", lr=0.001, name=None, is_cuda=True):
+    def __init__(self, model_name="resRnn", lr=0.001, name=None, is_cuda=True):
         """
         Creae a text recognizer with the given models name
 
@@ -59,6 +59,7 @@ class TextRecognizer:
             print_error(str(self.ngram) + "-gram not implemented !")
             raise NotImplementedError()
 
+        print(self.labels)
 
         # with open("resources/word_characters.txt", "r") as content_file:
         #    self.word_labels = content_file.read()
