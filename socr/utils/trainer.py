@@ -220,7 +220,7 @@ class Trainer:
                 variable = variable.cpu()
 
             outputs = self.model(variable)
-            loss_value = self.loss.forward(outputs, self.loss.process_labels(labels, is_cuda=is_cuda))
+            loss_value = self.loss.forward(outputs, self.loss.process_labels(labels, is_cuda=is_cuda)).mean()
 
             loss_value_cpu = loss_value.data.cpu().numpy()
             

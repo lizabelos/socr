@@ -7,6 +7,8 @@ from socr.text.modules.indrnn import IndRNN
 from socr.text.modules.resnet import ResNet, Bottleneck, BasicBlock
 from socr.utils.logger import print_normal
 
+import sru
+
 
 class resRnn(torch.nn.Module):
 
@@ -28,8 +30,11 @@ class resRnn(torch.nn.Module):
         ]))
         self.convolutions_output_size = self.get_cnn_output_size()
 
-        self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, n_layer=3, bidirectional=True, batch_norm=True, batch_first=True, dropout=0.2, nonlinearity='tanh')
-        self.fc = torch.nn.Linear(2 * self.rnn_size, self.output_numbers)
+        self.rnn = sru.SRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.output_numbers, num_layers=4, bidirectional=False, rnn_dropout=0.3, use_tanh=1, use_relu=0, layer_norm=False, weight_norm=True)
+
+        # self.rnn = torch.nn.GRU(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, num_layers=1, bidirectional=True)
+        # self.rnn = IndRNN(self.convolutions_output_size[1] * self.convolutions_output_size[2], self.rnn_size, n_layer=3, bidirectional=True, batch_norm=True, batch_first=True, dropout=0.1, nonlinearity='relu')
+        # self.fc = torch.nn.Linear(2 * self.rnn_size, self.output_numbers)
 
         self.softmax = torch.nn.Softmax(dim=2)
 
@@ -60,7 +65,7 @@ class resRnn(torch.nn.Module):
         # x is (batch_size x width x hidden_size)
 
         x, _ = self.rnn(x)
-        x = self.fc(x)
+        # x = self.fc(x)
         # x = x.view(width, batch_size, self.output_numbers, 2)
         # x = torch.sum(x, dim=3)
 

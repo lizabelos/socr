@@ -18,7 +18,7 @@ class dhSegment(torch.nn.Module):
         self.thicknesses = thicknesses
         self.height_importance = height_importance
         self.exponential_decay = exponential_decay
-        self.bn_momentum = 0.1
+        self.bn_momentum = bn_momentum
 
         self.inplanes = 64
 
